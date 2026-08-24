@@ -177,7 +177,12 @@ class QualtricsClient:
         payload = self._request_json(
             "POST",
             self._survey_url("export-responses"),
-            body=json.dumps({"format": self._config.export_format}).encode("utf-8"),
+            body=json.dumps(
+                {
+                    "format": self._config.export_format,
+                    "useLabels": True,
+                }
+            ).encode("utf-8"),
             headers=self._bearer_headers(token, content_type="application/json"),
         )
         progress_id = (payload.get("result") or {}).get("progressId")

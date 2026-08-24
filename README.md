@@ -1,8 +1,8 @@
-# Live Survey
+# Festival Data Detective Challenge
 
 Streamlit dashboard for a live event: people complete a Qualtrics survey, and responses appear on this page after the next Qualtrics export (about every 30 seconds).
 
-The overview is survey-agnostic. Demo charts for the current Qualtrics demo live in `dashboard/widgets_demo.py` so academics can replace them when the real survey is ready.
+The dashboard focuses on three connected stories: pizza choices versus crowd predictions, the effect of positive versus negative treatment wording, and a rotating learning panel about privacy, sample size and bias. Festival-specific charts live in `dashboard/widgets_festival.py`.
 
 ## Prerequisites
 
@@ -57,7 +57,16 @@ python qualtrics-export/export_survey.py
 
 Files are written under `qualtrics-export/output/<survey_id>/`, which is gitignored.
 
-## Customising for the real survey
+## Qualtrics question matching
 
-- Leave `dashboard/app.py` and `dashboard/data.py` as the generic shell (counts, arrivals over time, latest table).
-- Replace `dashboard/widgets_demo.py` with charts that match the real questions.
+The festival survey uses these Qualtrics data-export tags:
+
+- `AGE_GROUP`
+- `PIZZA_METHOD`
+- `PREDICT_LEADER`
+- `FRAME_POSITIVE`
+- `FRAME_NEGATIVE`
+- `PRIVACY_MYTH`
+- `SPOT_OVERCLAIM`
+
+Keep these tags if question wording or order changes. The public dashboard excludes preview/test submissions and unfinished responses, and only displays grouped results.

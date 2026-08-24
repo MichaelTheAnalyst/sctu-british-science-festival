@@ -4,6 +4,7 @@ venv/
 __pycache__/
 *.pyc
 dashboard.*.log
+streamlit.*.log
 .env
 qualtrics-export/config.json
 .DS_Store

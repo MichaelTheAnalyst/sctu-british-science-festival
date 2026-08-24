@@ -1,143 +1,136 @@
-"""Live Streamlit dashboard for Qualtrics responses."""
+"""Large-screen Streamlit dashboard for the Festival Data Detective activity."""
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 
-import pandas as pd
 import streamlit as st
 
-from data import Snapshot, dashboard_poll_seconds, overview_columns, refresh_snapshot
-from widgets_demo import render_demo_widgets
+from data import Snapshot, dashboard_poll_seconds, refresh_snapshot
+from widgets_festival import public_responses, render_festival_widgets
 
-LATEST_ROWS = 6
-CHART_HEIGHT = 280
+LEARNING_ROTATION_SECONDS = 20
 
-# Kiosk / display-screen layout: fill the viewport, hide Streamlit chrome.
 _DISPLAY_CSS = """
 <style>
     html, body, [data-testid="stAppViewContainer"] {
-        height: 100%;
-        overflow: hidden !important;
+        min-height: 100%;
+        background: #f6f8fb;
     }
-    [data-testid="stHeader"],
-    [data-testid="stToolbar"],
-    [data-testid="stDecoration"],
-    [data-testid="stStatusWidget"],
-    #MainMenu,
-    footer,
-    [data-testid="stDeployButton"] {
+    [data-testid="stHeader"], [data-testid="stToolbar"],
+    [data-testid="stDecoration"], [data-testid="stStatusWidget"],
+    #MainMenu, footer, [data-testid="stDeployButton"] {
         display: none !important;
     }
     .block-container {
-        padding-top: 0.6rem !important;
-        padding-bottom: 0.4rem !important;
-        padding-left: 1.2rem !important;
-        padding-right: 1.2rem !important;
+        padding: 0.75rem 1.35rem 0.8rem !important;
         max-width: 100% !important;
     }
-    [data-testid="stVerticalBlock"] > div {
-        gap: 0.35rem;
+    [data-testid="stVerticalBlock"] { gap: 0.45rem; }
+    [data-testid="stMetric"] {
+        background: #ffffff;
+        border: 1px solid #d9e1ea;
+        border-radius: 0.8rem;
+        padding: 0.35rem 0.75rem;
     }
     [data-testid="stMetricValue"] {
-        font-size: 2.2rem;
+        color: #12355b;
+        font-size: 2.65rem;
+        font-weight: 750;
     }
-    h1 {
-        font-size: 1.6rem !important;
-        margin: 0 !important;
-        padding: 0 !important;
+    [data-testid="stMetricLabel"] { font-size: 1rem; }
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background: #ffffff;
+        border-color: #d9e1ea !important;
+        border-radius: 0.9rem !important;
+        box-shadow: 0 2px 8px rgba(18, 53, 91, 0.05);
     }
-    h3 {
-        font-size: 1.05rem !important;
-        margin: 0 0 0.25rem 0 !important;
+    h1 { color: #12355b; font-size: 2.55rem !important; margin: 0 !important; }
+    h2, h3 { color: #12355b; }
+    h3 { font-size: 1.45rem !important; margin: 0 0 0.25rem !important; }
+    h4 { font-size: 1.2rem !important; margin: 0 0 0.2rem !important; }
+    p, [data-testid="stCaptionContainer"] { font-size: 1.05rem; }
+    .detective-subtitle { color: #40566f; font-size: 1.18rem; margin-top: -0.35rem; }
+    .status-line { color: #40566f; font-size: 1rem; text-align: right; }
+    .equal-numbers {
+        background: #e7f4f2;
+        border-left: 5px solid #167d78;
+        border-radius: 0.4rem;
+        color: #12355b;
+        font-size: 1.05rem;
+        font-weight: 650;
+        padding: 0.45rem 0.7rem;
     }
+    .learning-copy { color: #243b53; font-size: 1.12rem; line-height: 1.42; }
 </style>
 """
 
 
 def main() -> None:
-    """Render the live survey dashboard in a no-scroll landscape layout."""
+    """Render the no-scroll public display and refresh it automatically."""
     st.set_page_config(
-        page_title="Live Survey",
+        page_title="Festival Data Detective",
+        page_icon=":material/query_stats:",
         layout="wide",
         initial_sidebar_state="collapsed",
     )
     st.markdown(_DISPLAY_CSS, unsafe_allow_html=True)
 
     poll_seconds = dashboard_poll_seconds()
-    poll_label = _poll_label(poll_seconds)
+    redraw_seconds = min(poll_seconds, LEARNING_ROTATION_SECONDS)
 
-    @st.fragment(run_every=poll_seconds)
+    @st.fragment(run_every=redraw_seconds)
     def live_panel() -> None:
-        """Poll Qualtrics (subject to TTL) and redraw the display layout."""
         snapshot = refresh_snapshot()
-        _header(snapshot, poll_label)
-        _charts_row(snapshot)
-        _latest_strip(snapshot)
+        responses = public_responses(snapshot.responses)
+        _header(snapshot, len(responses), poll_seconds)
+        render_festival_widgets(snapshot, responses=responses)
 
     live_panel()
 
 
-def _header(snapshot: Snapshot, poll_label: str) -> None:
-    frame = snapshot.responses
-    total = len(frame)
-    finished = int(frame["Finished"].sum()) if "Finished" in frame.columns and total else 0
-    fetched = _format_timestamp(snapshot.fetched_at)
-
-    title_col, *metric_cols, status_col = st.columns([1.6, 1, 1, 1, 2.2], vertical_alignment="center")
-    title_col.markdown("# Live Survey")
-    metric_cols[0].metric("Responses", total)
-    metric_cols[1].metric("Finished", finished)
-    metric_cols[2].metric("In progress", max(0, total - finished))
-    status_col.caption(f"Updated {fetched} · poll {poll_label}")
+def _header(snapshot: Snapshot, response_count: int, poll_seconds: float) -> None:
+    title_col, count_col, status_col = st.columns(
+        [2.7, 1.05, 1.55], vertical_alignment="center"
+    )
+    with title_col:
+        st.markdown("# Festival Data Detective")
+        st.markdown(
+            '<p class="detective-subtitle">Watch individual answers become grouped evidence.</p>',
+            unsafe_allow_html=True,
+        )
+    with count_col:
+        st.metric("Completed responses", response_count, border=False)
+    with status_col:
+        fetched = _format_timestamp(snapshot.fetched_at)
+        st.markdown(
+            f'<p class="status-line"><b>Updated {fetched}</b><br>'
+            f'Checking every {_poll_label(poll_seconds)}</p>',
+            unsafe_allow_html=True,
+        )
 
     if snapshot.error:
-        kind = st.warning if snapshot.from_cache else st.error
-        kind(snapshot.error)
-
-
-def _charts_row(snapshot: Snapshot) -> None:
-    arrivals_col, demo_left, demo_right = st.columns(3)
-    with arrivals_col:
-        st.markdown("### Arrivals")
-        arrivals = _arrivals_by_minute(snapshot.responses)
-        if arrivals.empty:
-            st.caption("No timestamps yet.")
+        message = f"Live update temporarily unavailable. Showing results retrieved at {fetched}."
+        if snapshot.from_cache:
+            st.warning(message, icon=":material/cloud_off:")
         else:
-            st.line_chart(arrivals.set_index("minute"), height=CHART_HEIGHT)
-    render_demo_widgets(snapshot, left=demo_left, right=demo_right, chart_height=CHART_HEIGHT)
-
-
-def _latest_strip(snapshot: Snapshot) -> None:
-    st.markdown("### Latest responses")
-    frame = snapshot.responses
-    if frame.empty:
-        st.caption("Waiting for the first completed export.")
-        return
-    display = frame[overview_columns(frame)].tail(LATEST_ROWS).iloc[::-1].copy()
-    renamed = {name: snapshot.labels.get(name) or name for name in display.columns}
-    st.dataframe(
-        display.rename(columns=renamed),
-        use_container_width=True,
-        hide_index=True,
-        height=min(38 + LATEST_ROWS * 35, 260),
-    )
-
-
-def _arrivals_by_minute(frame: pd.DataFrame) -> pd.DataFrame:
-    if "RecordedDate" not in frame.columns or frame.empty:
-        return pd.DataFrame(columns=["minute", "responses"])
-    stamps = pd.to_datetime(frame["RecordedDate"], utc=True, errors="coerce").dropna()
-    if stamps.empty:
-        return pd.DataFrame(columns=["minute", "responses"])
-    counted = stamps.dt.floor("min").value_counts().sort_index()
-    return pd.DataFrame({"minute": counted.index.tz_convert(None), "responses": counted.to_numpy()})
+            st.error(message, icon=":material/error:")
+    elif response_count == 0:
+        st.info(
+            "The dataset is ready. Who will add the first answer?",
+            icon=":material/database:",
+        )
+    elif response_count < 10:
+        st.warning(
+            "Very early data — expect the results to move as new answers arrive.",
+            icon=":material/query_stats:",
+        )
 
 
 def _poll_label(seconds: float) -> str:
     if seconds == int(seconds):
-        return f"{int(seconds)}s"
-    return f"{seconds:g}s"
+        return f"{int(seconds)} seconds"
+    return f"{seconds:g} seconds"
 
 
 def _format_timestamp(value: datetime | None) -> str:
