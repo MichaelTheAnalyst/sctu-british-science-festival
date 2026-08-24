@@ -14,6 +14,7 @@ import json
 import logging
 import sys
 import time
+import uuid
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -207,11 +208,9 @@ class QualtricsClient:
             f"export-responses/{urllib.parse.quote(file_id, safe='')}/file"
         )
         body = self._request_bytes("GET", url, headers=self._bearer_headers(token))
-        tmp_path = destination.with_suffix(destination.suffix + ".partial")
-        tmp_path.write_bytes(body)
-        tmp_path.replace(destination)
-        LOGGER.info("Wrote %s (%s bytes)", destination, destination.stat().st_size)
-        return destination
+        written = _atomic_write_bytes(destination, body)
+        LOGGER.info("Wrote %s (%s bytes)", written, written.stat().st_size)
+        return written
 
     def _survey_url(self, suffix: str) -> str:
         survey_id = urllib.parse.quote(self._config.survey_id, safe="")
@@ -283,11 +282,62 @@ def extract_zip(zip_path: Path, output_dir: Path) -> list[Path]:
         for info in members:
             target = _safe_extract_path(output_dir, info.filename)
             target.parent.mkdir(parents=True, exist_ok=True)
-            with archive.open(info) as source, target.open("wb") as dest:
-                dest.write(source.read())
-            extracted.append(target)
-            LOGGER.info("Extracted %s", target)
+            with archive.open(info) as source:
+                written = _atomic_write_bytes(target, source.read())
+            extracted.append(written)
+            LOGGER.info("Extracted %s", written)
     return extracted
+
+
+def export_responses(config: QualtricsConfig, output_root: Path) -> list[Path]:
+    """Download and extract a full Qualtrics response export.
+
+    Args:
+        config: Validated Qualtrics connection settings.
+        output_root: Parent directory; files are written under
+            ``output_root / survey_id``.
+
+    Returns:
+        Paths of extracted files, in zip order.
+    """
+    output_dir = output_root / config.survey_id
+    output_dir.mkdir(parents=True, exist_ok=True)
+    zip_path = output_dir / f"{config.survey_id}.{config.export_format}.zip"
+
+    client = QualtricsClient(config)
+    token = client.fetch_access_token()
+    progress_id = client.start_export(token)
+    file_id = client.wait_for_file_id(token, progress_id)
+    client.download_export_zip(token, file_id, zip_path)
+    return extract_zip(zip_path, output_dir)
+
+
+def _atomic_write_bytes(destination: Path, body: bytes) -> Path:
+    """Write bytes to ``destination`` via a unique sibling temp file.
+
+    Unique temp names avoid Windows file-lock failures when a previous
+    export or dashboard reader still has the target open. If replacing the
+    existing path fails, the bytes are written to a unique sibling instead
+    and that sibling path is returned.
+
+    Args:
+        destination: Preferred final path.
+        body: File contents.
+
+    Returns:
+        The path that actually contains ``body``.
+    """
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = destination.with_name(f"{destination.name}.{uuid.uuid4().hex}.partial")
+    tmp_path.write_bytes(body)
+    try:
+        tmp_path.replace(destination)
+        return destination
+    except OSError:
+        fallback = destination.with_name(f"{destination.stem}.{uuid.uuid4().hex}{destination.suffix}")
+        tmp_path.replace(fallback)
+        LOGGER.warning("Could not replace %s; wrote %s instead", destination, fallback)
+        return fallback
 
 
 def _safe_extract_path(output_dir: Path, member_name: str) -> Path:
@@ -383,20 +433,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     try:
         config = load_config(args.config)
-        output_dir = args.output_dir / config.survey_id
-        output_dir.mkdir(parents=True, exist_ok=True)
-        zip_path = output_dir / f"{config.survey_id}.{config.export_format}.zip"
-
-        client = QualtricsClient(config)
-        token = client.fetch_access_token()
-        progress_id = client.start_export(token)
-        file_id = client.wait_for_file_id(token, progress_id)
-        client.download_export_zip(token, file_id, zip_path)
-        extracted = extract_zip(zip_path, output_dir)
+        extracted = export_responses(config, args.output_dir)
     except (OSError, QualtricsError) as exc:
         LOGGER.error("%s", exc)
         return 1
 
+    output_dir = args.output_dir / config.survey_id
     print(f"Saved export under {output_dir}")
     for path in extracted:
         print(f"  {path}")
