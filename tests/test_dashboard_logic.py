@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT / "dashboard"))
 
 from history import leader_history  # noqa: E402
 from synthetic_data import demonstration_responses  # noqa: E402
-from widgets_festival import current_leader, public_responses  # noqa: E402
+from widgets_festival import age_distribution, current_leader, public_responses  # noqa: E402
 
 
 class DashboardLogicTests(unittest.TestCase):
@@ -28,6 +28,14 @@ class DashboardLogicTests(unittest.TestCase):
         self.assertTrue(frame["FRAME_NEGATIVE"].notna().any())
         self.assertGreaterEqual(frame["AGE_GROUP"].nunique(), 4)
         self.assertIsNotNone(current_leader(frame))
+
+    def test_age_analysis_uses_all_eligible_groups_and_suppresses_small_groups(self) -> None:
+        distribution, insight = age_distribution(demonstration_responses())
+        visible_groups = distribution[["age", "group_size"]].drop_duplicates()
+        self.assertGreaterEqual(len(visible_groups), 2)
+        self.assertTrue(visible_groups["group_size"].ge(10).all())
+        self.assertEqual(distribution.groupby("age")["share"].sum().round(8).tolist(), [1.0] * len(visible_groups))
+        self.assertIn("overall crowd", insight)
 
     def test_history_includes_milestones_and_current_total(self) -> None:
         history = leader_history(demonstration_responses())

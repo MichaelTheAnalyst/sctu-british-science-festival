@@ -15,6 +15,15 @@ PIZZA_LABELS = {
     "Pizza cutter": "🍕  Pizza cutter", "Knife": "🔪  Knife", "Scissors": "✂️  Scissors",
     "Fold or tear it": "🤲  Fold or tear", "Someone else can do it": "👥  Someone else",
 }
+PIZZA_SHORT_LABELS = {
+    "Pizza cutter": "Cutter",
+    "Knife": "Knife",
+    "Scissors": "Scissors",
+    "Fold or tear it": "Fold / tear",
+    "Someone else can do it": "Someone else",
+}
+AGE_ORDER = ["Under 16", "16–24", "16-24", "25–49", "25-49", "50+", "Prefer not to say"]
+MIN_AGE_GROUP_SIZE = 10
 FRAME_GROUPS = ["Promising", "Neutral", "Not promising", "Not sure"]
 FRAME_COLOURS = ["#35D0BA", "#F6C85F", "#F47C7C", "#8A9BB0"]
 CAREFUL_CONCLUSION = "Scissors are currently leading among the festival visitors who answered"
@@ -187,17 +196,103 @@ def _promising_share(answers: pd.Series) -> float:
 
 
 def _age_story(frame: pd.DataFrame) -> None:
-    if "AGE_GROUP" not in frame.columns or "PIZZA_METHOD" not in frame.columns: return
-    grouped = frame[["AGE_GROUP", "PIZZA_METHOD"]].dropna()
-    eligible = grouped["AGE_GROUP"].value_counts().loc[lambda value: value >= 10].index.tolist()
-    if len(eligible) < 2:
-        _feature_card("👥  Do age groups answer differently?", "This comparison appears only when at least two groups have 10 or more answers.", accent="teal")
+    st.markdown("### 👥 Age lens")
+    distribution, insight = age_distribution(frame)
+    if distribution.empty:
+        _feature_card(
+            "Do age groups answer differently?",
+            f"This comparison appears when at least two age groups have {MIN_AGE_GROUP_SIZE} or more pizza answers. Small groups stay hidden.",
+            accent="teal",
+        )
         return
-    examples = []
-    for age in eligible[:2]:
-        leader = _leader(grouped.loc[grouped["AGE_GROUP"] == age, "PIZZA_METHOD"])
-        examples.append(f"<strong>{age}</strong> currently favour {str(leader).lower()}.")
-    _feature_card("👥  Do age groups answer differently?", "<br>".join(examples) + "<br><small>A pattern does not mean age caused the difference.</small>", accent="teal")
+
+    visible_order = distribution["age_label"].drop_duplicates().tolist()
+    method_order = [PIZZA_SHORT_LABELS[item] for item in PIZZA_ORDER]
+    heatmap = alt.Chart(distribution).mark_rect(cornerRadius=4).encode(
+        x=alt.X(
+            "method_label:N",
+            sort=method_order,
+            title=None,
+            axis=alt.Axis(labelAngle=0, labelFontSize=12, labelColor="#DCE7F3", labelLimit=90),
+        ),
+        y=alt.Y(
+            "age_label:N",
+            sort=visible_order,
+            title=None,
+            axis=alt.Axis(labelFontSize=14, labelColor="#F7FAFC", labelLimit=150),
+        ),
+        color=alt.Color(
+            "share:Q",
+            scale=alt.Scale(domain=[0, 0.3, 0.6], range=["#173A54", "#22B8A7", "#F6C85F"]),
+            legend=None,
+        ),
+        tooltip=[
+            alt.Tooltip("age:N", title="Age group"),
+            alt.Tooltip("method:N", title="Pizza method"),
+            alt.Tooltip("count:Q", title="Visitors"),
+            alt.Tooltip("share:Q", title="Within group", format=".0%"),
+            alt.Tooltip("group_size:Q", title="Group n"),
+        ],
+    )
+    labels = alt.Chart(distribution).mark_text(fontSize=12, fontWeight=700).encode(
+        x=alt.X("method_label:N", sort=method_order),
+        y=alt.Y("age_label:N", sort=visible_order),
+        text=alt.Text("share:Q", format=".0%"),
+        color=alt.condition("datum.share >= 0.42", alt.value("#071A2B"), alt.value("#F7FAFC")),
+    )
+    st.altair_chart((heatmap + labels).properties(height=45 * len(visible_order)).configure_view(stroke=None), theme=None)
+    st.markdown(
+        f'<p class="large-explainer"><strong>{insight}</strong><br>'
+        'Percentages are calculated within each visible age group. These patterns do not show that age caused the difference.</p>',
+        unsafe_allow_html=True,
+    )
+
+
+def age_distribution(
+    frame: pd.DataFrame,
+    minimum_group_size: int = MIN_AGE_GROUP_SIZE,
+) -> tuple[pd.DataFrame, str]:
+    """Build a privacy-aware age-by-pizza distribution and its clearest comparison."""
+    columns = ["age", "age_label", "method", "method_label", "count", "share", "group_size"]
+    if "AGE_GROUP" not in frame.columns or "PIZZA_METHOD" not in frame.columns:
+        return pd.DataFrame(columns=columns), "Waiting for age-group responses."
+    grouped = frame[["AGE_GROUP", "PIZZA_METHOD"]].dropna().copy()
+    grouped["AGE_GROUP"] = grouped["AGE_GROUP"].astype("string").str.strip()
+    grouped["PIZZA_METHOD"] = grouped["PIZZA_METHOD"].astype("string").str.strip()
+    sizes = grouped["AGE_GROUP"].value_counts()
+    eligible = [age for age in AGE_ORDER if int(sizes.get(age, 0)) >= minimum_group_size]
+    if len(eligible) < 2:
+        return pd.DataFrame(columns=columns), "Waiting for two sufficiently large age groups."
+
+    overall = grouped["PIZZA_METHOD"].value_counts(normalize=True)
+    rows: list[dict[str, object]] = []
+    for age in eligible:
+        answers = grouped.loc[grouped["AGE_GROUP"] == age, "PIZZA_METHOD"]
+        counts = answers.value_counts()
+        for method in PIZZA_ORDER:
+            count = int(counts.get(method, 0))
+            share = count / len(answers)
+            rows.append(
+                {
+                    "age": age,
+                    "age_label": f"{age} · n={len(answers)}",
+                    "method": method,
+                    "method_label": PIZZA_SHORT_LABELS[method],
+                    "count": count,
+                    "share": share,
+                    "group_size": len(answers),
+                    "difference": share - float(overall.get(method, 0.0)),
+                }
+            )
+    result = pd.DataFrame(rows)
+    standout = result.loc[result["difference"].abs().idxmax()]
+    direction = "more" if standout["difference"] >= 0 else "less"
+    insight = (
+        f"Largest visible difference: {standout['age']} selected "
+        f"{str(standout['method']).lower()} {abs(float(standout['difference'])):.0%} "
+        f"{direction} often than the overall crowd."
+    )
+    return result, insight
 
 
 def _statement_card(group: str, statement: str, result: str) -> None:
