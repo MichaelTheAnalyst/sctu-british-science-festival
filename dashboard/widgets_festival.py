@@ -132,13 +132,31 @@ def _trust_scene(frame: pd.DataFrame, *, history_path: Path | None, demonstratio
     history = leader_history(frame, persist_path=None if demonstration else history_path)
     left, right = st.columns([0.92, 1.08], gap="large")
     with left:
-        careful = int(overclaim.str.casefold().eq(CAREFUL_CONCLUSION.casefold()).sum()) if not overclaim.empty else 0
-        careful_share = careful / len(overclaim) if len(overclaim) else 0
-        _feature_card("🔎  The careful conclusion", f"<strong>{careful_share:.0%}</strong> chose the cautious answer.<br>“{CAREFUL_CONCLUSION}.”", accent="teal")
-        st.markdown('<div class="crossed-claim">“Scissors are Britain’s favourite pizza-cutting method.”</div><p class="large-explainer">Our visitors are not a representative sample of everyone in the UK.</p>', unsafe_allow_html=True)
-        myths = int(privacy.str.casefold().eq("myth").sum()) if not privacy.empty else 0
-        myth_share = myths / len(privacy) if len(privacy) else 0
-        _feature_card("🛡️  Privacy: myth or fact?", f"<strong>{myth_share:.0%}</strong> selected <strong>Myth</strong>.<br>Access to named health information should be restricted to authorised people for approved purposes.", accent="purple")
+        st.markdown("### What conclusions did detectives choose?")
+        if overclaim.empty:
+            _empty_card("Waiting for conclusion answers", "The full pattern of careful and overclaimed answers will appear here.")
+        else:
+            conclusion_data = _conclusion_distribution(overclaim)
+            st.altair_chart(_answer_bar_chart(conclusion_data, height=235), theme=None)
+            careful_share = float(conclusion_data.loc[conclusion_data["correct"], "share"].sum())
+            st.markdown(
+                f'<div class="discovery-card"><strong>{careful_share:.0%} chose the careful conclusion.</strong><br>'
+                'Our festival visitors are not a representative sample of everyone in the UK.</div>',
+                unsafe_allow_html=True,
+            )
+
+        st.markdown("### Privacy: myth or fact?")
+        if privacy.empty:
+            _empty_card("Waiting for privacy answers", "Myth, Fact and Not sure responses will appear here.")
+        else:
+            privacy_data = _privacy_distribution(privacy)
+            st.altair_chart(_answer_bar_chart(privacy_data, height=145), theme=None)
+            myth_share = float(privacy_data.loc[privacy_data["correct"], "share"].sum())
+            st.markdown(
+                f'<p class="large-explainer"><strong>{myth_share:.0%} selected Myth.</strong> '
+                'Access to named health information should be restricted to authorised people for approved purposes.</p>',
+                unsafe_allow_html=True,
+            )
     with right:
         st.markdown("### How the leader changed as evidence grew")
         if history.empty:
@@ -163,6 +181,80 @@ def _trust_scene(frame: pd.DataFrame, *, history_path: Path | None, demonstratio
             st.altair_chart(timeline, theme=None)
             changes = leader_change_count(frame)
             st.markdown(f'<div class="discovery-card"><strong>The leader changed {changes} time{"" if changes == 1 else "s"} while the dataset grew.</strong><br>Early results can move dramatically. Larger samples are often more stable, but they can still be biased.</div>', unsafe_allow_html=True)
+
+
+def _answer_bar_chart(distribution: pd.DataFrame, *, height: int) -> alt.Chart:
+    """Show a festival-readable answer distribution with direct labels."""
+    order = distribution["answer"].tolist()
+    bars = alt.Chart(distribution).mark_bar(height=25, cornerRadiusEnd=6).encode(
+        y=alt.Y(
+            "answer:N",
+            sort=order,
+            title=None,
+            axis=alt.Axis(labelFontSize=14, labelColor="#F7FAFC", labelLimit=215),
+        ),
+        x=alt.X("share:Q", title=None, axis=None, scale=alt.Scale(domain=[0, 1])),
+        color=alt.Color(
+            "correct:N",
+            scale=alt.Scale(domain=[True, False], range=["#35D0BA", "#647B91"]),
+            legend=None,
+        ),
+        tooltip=[
+            alt.Tooltip("answer:N", title="Answer"),
+            alt.Tooltip("count:Q", title="Visitors"),
+            alt.Tooltip("share:Q", title="Share", format=".0%"),
+        ],
+    )
+    labels = alt.Chart(distribution).mark_text(align="left", dx=8, fontSize=14, fontWeight=700).encode(
+        y=alt.Y("answer:N", sort=order),
+        x=alt.X("share:Q"),
+        text=alt.Text("label:N"),
+        color=alt.value("#F7FAFC"),
+    )
+    return (bars + labels).properties(height=height).configure_view(stroke=None)
+
+
+def _conclusion_distribution(answers: pd.Series) -> pd.DataFrame:
+    buckets = ["Careful conclusion", "UK-wide claim", "Best-method claim", "Nothing can be learned", "Not sure"]
+
+    def bucket(value: object) -> str:
+        text = str(value).casefold()
+        if "visitors who answered" in text or "festival visitors who answered" in text:
+            return "Careful conclusion"
+        if "across the uk" in text or "britain" in text:
+            return "UK-wide claim"
+        if "scientifically" in text or "best method" in text:
+            return "Best-method claim"
+        if "cannot learn" in text or "can't learn" in text:
+            return "Nothing can be learned"
+        return "Not sure"
+
+    mapped = answers.map(bucket)
+    counts = mapped.value_counts()
+    total = len(mapped)
+    return pd.DataFrame(
+        {
+            "answer": buckets,
+            "count": [int(counts.get(item, 0)) for item in buckets],
+            "share": [int(counts.get(item, 0)) / total for item in buckets],
+            "correct": [item == "Careful conclusion" for item in buckets],
+        }
+    ).assign(label=lambda data: data.apply(lambda row: f"{row['share']:.0%} · n={row['count']}", axis=1))
+
+
+def _privacy_distribution(answers: pd.Series) -> pd.DataFrame:
+    buckets = ["Myth", "Fact", "Not sure"]
+    normalized = answers.astype("string").str.strip().str.casefold()
+    counts = normalized.value_counts()
+    total = len(normalized)
+    return pd.DataFrame(
+        {
+            "answer": buckets,
+            "count": [int(counts.get(item.casefold(), 0)) for item in buckets],
+            "share": [int(counts.get(item.casefold(), 0)) / total for item in buckets],
+            "correct": [item == "Myth" for item in buckets],
+        }
+    ).assign(label=lambda data: data.apply(lambda row: f"{row['share']:.0%} · n={row['count']}", axis=1))
 
 
 def _pizza_summary(actual: pd.Series) -> pd.DataFrame:
