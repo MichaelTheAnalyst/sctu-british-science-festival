@@ -35,7 +35,7 @@ Copy the example config and fill in credentials (this file is gitignored):
 python -c "from pathlib import Path; src = Path('qualtrics-export') / 'config.example.json'; dest = Path('qualtrics-export') / 'config.json'; dest.write_text(src.read_text(encoding='utf-8'), encoding='utf-8')"
 ```
 
-Edit `qualtrics-export/config.json` and set `server`, `client_id`, `client_secret`, and `survey_id`.
+Edit `qualtrics-export/config.json` and set `server`, `client_id`, `client_secret`, and `survey_id`. Optional `poll_interval_seconds` (default 30) controls how often the dashboard re-fetches from Qualtrics.
 
 ## Run the dashboard
 
@@ -45,7 +45,7 @@ From the repository root, with the venv active:
 python -m streamlit run dashboard/app.py
 ```
 
-Keep the browser tab open during the event. Streamlit reruns the live panel every 30 seconds; Qualtrics is only contacted when that cache TTL has expired, and all viewers in the same process share one export.
+Keep the browser tab open during the event. Streamlit reruns the live panel on `poll_interval_seconds`; Qualtrics is only contacted when that cache TTL has expired, and all viewers in the same process share one export. Restart the app after changing the interval.
 
 ## One-shot export (optional)
 

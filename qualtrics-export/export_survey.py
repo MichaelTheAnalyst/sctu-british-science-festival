@@ -30,6 +30,7 @@ POLL_INTERVAL_SECONDS = 2.0
 POLL_TIMEOUT_SECONDS = 300.0
 HTTP_TIMEOUT_SECONDS = 60.0
 PREVIEW_ROWS = 20
+DEFAULT_DASHBOARD_POLL_SECONDS = 30.0
 REQUIRED_CONFIG_KEYS = (
     "server",
     "client_id",
@@ -52,6 +53,7 @@ class QualtricsConfig:
     survey_id: str
     scope: str = "read:survey_responses"
     export_format: str = "csv"
+    poll_interval_seconds: float = DEFAULT_DASHBOARD_POLL_SECONDS
 
 
 def load_config(path: Path) -> QualtricsConfig:
@@ -81,7 +83,31 @@ def load_config(path: Path) -> QualtricsConfig:
         survey_id=str(raw["survey_id"]).strip(),
         scope=str(raw.get("scope") or "read:survey_responses").strip(),
         export_format=str(raw.get("format") or "csv").strip(),
+        poll_interval_seconds=_parse_poll_interval(raw.get("poll_interval_seconds")),
     )
+
+
+def _parse_poll_interval(value: Any) -> float:
+    """Return a positive dashboard poll interval in seconds.
+
+    Args:
+        value: Raw JSON value, or None to use the default.
+
+    Returns:
+        Interval in seconds.
+
+    Raises:
+        QualtricsError: If the value is present but not a positive number.
+    """
+    if value is None or value == "":
+        return DEFAULT_DASHBOARD_POLL_SECONDS
+    try:
+        seconds = float(value)
+    except (TypeError, ValueError) as exc:
+        raise QualtricsError("Config `poll_interval_seconds` must be a number") from exc
+    if seconds <= 0:
+        raise QualtricsError("Config `poll_interval_seconds` must be greater than 0")
+    return seconds
 
 
 def _normalise_server(server: str) -> str:

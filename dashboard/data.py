@@ -19,9 +19,13 @@ _EXPORT_DIR = Path(__file__).resolve().parent.parent / "qualtrics-export"
 if str(_EXPORT_DIR) not in sys.path:
     sys.path.insert(0, str(_EXPORT_DIR))
 
-from export_survey import QualtricsError, export_responses, load_config  # noqa: E402
+from export_survey import (  # noqa: E402
+    DEFAULT_DASHBOARD_POLL_SECONDS,
+    QualtricsError,
+    export_responses,
+    load_config,
+)
 
-FETCH_TTL_SECONDS = 30.0
 DEFAULT_CONFIG_PATH = _EXPORT_DIR / "config.json"
 DEFAULT_OUTPUT_ROOT = _EXPORT_DIR / "output"
 
@@ -137,6 +141,23 @@ def overview_columns(frame: pd.DataFrame) -> list[str]:
     return preferred + question_columns(frame)
 
 
+def dashboard_poll_seconds(config_path: Path | None = None) -> float:
+    """Return the dashboard poll interval from config, or the default.
+
+    Args:
+        config_path: Qualtrics JSON config. Defaults to
+            ``qualtrics-export/config.json``.
+
+    Returns:
+        Poll interval in seconds. Falls back to
+        :data:`DEFAULT_DASHBOARD_POLL_SECONDS` if the file cannot be loaded.
+    """
+    try:
+        return load_config(config_path or DEFAULT_CONFIG_PATH).poll_interval_seconds
+    except (OSError, QualtricsError, FileNotFoundError, ValueError):
+        return DEFAULT_DASHBOARD_POLL_SECONDS
+
+
 def refresh_snapshot(
     *,
     config_path: Path | None = None,
@@ -165,7 +186,8 @@ def refresh_snapshot(
 
     with _lock:
         now = datetime.now(timezone.utc)
-        if not force and _cache is not None and _is_fresh(_cache, now):
+        ttl = dashboard_poll_seconds(config_path)
+        if not force and _cache is not None and _is_fresh(_cache, now, ttl):
             return _cache
 
         snapshot = _fetch_or_fallback(config_path, output_root, now)
@@ -258,10 +280,10 @@ def _first_tabular(paths: list[Path]) -> Path | None:
     return None
 
 
-def _is_fresh(snapshot: Snapshot, now: datetime) -> bool:
+def _is_fresh(snapshot: Snapshot, now: datetime, ttl_seconds: float) -> bool:
     if snapshot.fetched_at is None:
         return False
-    return (now - snapshot.fetched_at).total_seconds() < FETCH_TTL_SECONDS
+    return (now - snapshot.fetched_at).total_seconds() < ttl_seconds
 
 
 def _row_map(columns: list[str], raw: pd.DataFrame, row_index: int) -> dict[str, str]:

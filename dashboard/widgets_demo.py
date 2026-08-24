@@ -9,27 +9,27 @@ from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
+from streamlit.delta_generator import DeltaGenerator
 
 from data import Snapshot
 
 
-def render_demo_widgets(snapshot: Snapshot) -> None:
-    """Render demo-only charts, or a notice if expected columns are absent.
+def render_demo_widgets(
+    snapshot: Snapshot,
+    *,
+    left: DeltaGenerator,
+    right: DeltaGenerator,
+    chart_height: int = 280,
+) -> None:
+    """Render demo-only charts into the provided landscape columns.
 
     Args:
         snapshot: Latest parsed Qualtrics export.
+        left: Streamlit column for the first demo chart.
+        right: Streamlit column for the second demo chart.
+        chart_height: Pixel height for bar charts.
     """
-    st.subheader("Demo survey widgets")
-    st.caption(
-        "Tied to the current demo Qualtrics survey. Replace "
-        "`dashboard/widgets_demo.py` when academics publish the real instrument."
-    )
-
     frame = snapshot.responses
-    if frame.empty:
-        st.info("No responses yet, so demo charts have nothing to show.")
-        return
-
     spice_col = _find_column(frame, snapshot.labels, column_id="Q2", label_contains="spice")
     country_cols = [name for name in frame.columns if name.startswith("Q3_")]
     if not country_cols:
@@ -39,39 +39,46 @@ def render_demo_widgets(snapshot: Snapshot) -> None:
             if "countries visited" in label.lower()
         ]
 
-    if spice_col is None and not country_cols:
-        st.warning(
-            "This export does not include the demo Q2 / Q3 columns. "
-            "The generic overview above still works; update this section for the real survey."
-        )
-        return
-
-    left, right = st.columns(2)
     with left:
-        _spice_chart(frame, snapshot.labels, spice_col)
+        st.markdown("### Best Spice Girl")
+        if frame.empty:
+            st.caption("No responses yet.")
+        elif spice_col is None:
+            st.caption("Q2 not in this export — replace widgets_demo.py for the real survey.")
+        else:
+            _spice_chart(frame, snapshot.labels, spice_col, chart_height)
+
     with right:
-        _countries_chart(frame, snapshot.labels, country_cols)
+        st.markdown("### Countries visited")
+        if frame.empty:
+            st.caption("No responses yet.")
+        elif not country_cols:
+            st.caption("Q3 not in this export — replace widgets_demo.py for the real survey.")
+        else:
+            _countries_chart(frame, snapshot.labels, country_cols, chart_height)
 
 
-def _spice_chart(frame: pd.DataFrame, labels: dict[str, str], column: str | None) -> None:
-    if column is None:
-        st.info("Demo question Q2 (Best Spice Girl) is not in this export.")
-        return
+def _spice_chart(
+    frame: pd.DataFrame,
+    labels: dict[str, str],
+    column: str,
+    chart_height: int,
+) -> None:
     series = frame[column].replace("", pd.NA).dropna()
     title = labels.get(column) or column
-    st.markdown(f"**{title}**")
+    st.caption(title)
     if series.empty:
-        st.info("No answers for this question yet.")
+        st.caption("No answers yet.")
         return
-    counts = series.value_counts()
-    st.bar_chart(counts)
+    st.bar_chart(series.value_counts(), height=chart_height)
 
 
-def _countries_chart(frame: pd.DataFrame, labels: dict[str, str], columns: list[str]) -> None:
-    if not columns:
-        st.info("Demo question Q3 (Countries visited) is not in this export.")
-        return
-    st.markdown("**Countries visited**")
+def _countries_chart(
+    frame: pd.DataFrame,
+    labels: dict[str, str],
+    columns: list[str],
+    chart_height: int,
+) -> None:
     rows: list[dict[str, object]] = []
     for column in columns:
         selected = frame[column].astype(str).str.strip().isin({"1", "true", "True", "yes", "Yes"})
@@ -83,9 +90,9 @@ def _countries_chart(frame: pd.DataFrame, labels: dict[str, str], columns: list[
         )
     counts = pd.DataFrame(rows)
     if counts["responses"].sum() == 0:
-        st.info("No country selections yet.")
+        st.caption("No country selections yet.")
         return
-    st.bar_chart(counts.set_index("country")["responses"])
+    st.bar_chart(counts.set_index("country")["responses"], height=chart_height)
 
 
 def _find_column(
