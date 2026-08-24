@@ -139,6 +139,9 @@ def _scene_number() -> int:
 
 def _scene_controls(scene: int) -> None:
     """Allow staff to hold and flip through scenes without stopping live refreshes."""
+    # Reserve real Streamlit layout space after variable-height scene content.
+    # CSS margins alone can be under-measured when text wraps at short viewports.
+    st.space(20)
     held = st.session_state.get("manual_scene") in {1, 2, 3} or "scene" in st.query_params
     previous, label, following, automatic = st.columns(
         [1, 1.3, 1, 1], vertical_alignment="center"
