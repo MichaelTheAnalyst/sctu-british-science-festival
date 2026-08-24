@@ -53,6 +53,8 @@ Keep the browser tab open during the event. Streamlit reruns the live panel on `
 - `http://localhost:8501/?demo=1` shows a clearly labelled, deterministic 125-response simulation for display testing. Synthetic records never enter the Qualtrics export or live totals.
 - Add `&scene=1`, `&scene=2` or `&scene=3` to hold a particular scene during testing.
 
+Use **Previous scene** and **Next scene** at the bottom of the display to flip through the scenes manually. Manual navigation pauses the rotation; choose **Auto rotate** to resume the normal 20-second cycle.
+
 The app hides Streamlit controls and chart toolbars for presentation. Use the browser's full-screen command (usually `F11`) on the event display.
 
 Aggregated pizza-leader milestones are stored under `qualtrics-export/output/dashboard-history/`, which is ignored by Git. No individual response records are written to the history file.

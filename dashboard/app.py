@@ -57,6 +57,11 @@ _DISPLAY_CSS = """
     .footer-line { color:#8FA7BC; font-size:.95rem; margin-top:.35rem; text-align:right; }
     .scene-dots { color:#52718A; font-size:1.2rem; letter-spacing:.35rem; }
     .scene-dots strong { color:#35D0BA; }
+    .scene-control-label { color:#DCE7F3; font-size:1rem; font-weight:750; padding-top:.55rem; text-align:center; }
+    .scene-control-label strong { color:#35D0BA; }
+    .st-key-scene_previous button, .st-key-scene_next button, .st-key-scene_auto button {
+        border-color:#35D0BA; font-size:1rem; font-weight:750; min-height:2.65rem; width:100%;
+    }
     @media (max-width: 1100px) { h1{font-size:2.4rem!important} h2{font-size:2rem!important}.hero-count strong{font-size:3.6rem} }
 </style>
 """
@@ -81,6 +86,7 @@ def main() -> None:
         if event:
             st.markdown(f'<div class="event-banner">{event}</div>', unsafe_allow_html=True)
         render_scene(scene, frame, demonstration=demonstration, history_path=HISTORY_PATH)
+        _scene_controls(scene)
         _footer(scene, snapshot, poll_seconds, demonstration)
 
     display()
@@ -118,6 +124,9 @@ def _response_event(frame, demonstration: bool) -> str | None:
 
 
 def _scene_number() -> int:
+    manual = st.session_state.get("manual_scene")
+    if manual in {1, 2, 3}:
+        return int(manual)
     requested = st.query_params.get("scene")
     try:
         fixed = int(requested) if requested is not None else 0
@@ -126,6 +135,57 @@ def _scene_number() -> int:
     if fixed in {1, 2, 3}:
         return fixed
     return int(datetime.now(timezone.utc).timestamp() // SCENE_SECONDS) % 3 + 1
+
+
+def _scene_controls(scene: int) -> None:
+    """Allow staff to hold and flip through scenes without stopping live refreshes."""
+    held = st.session_state.get("manual_scene") in {1, 2, 3} or "scene" in st.query_params
+    previous, label, following, automatic = st.columns(
+        [1, 1.3, 1, 1], vertical_alignment="center"
+    )
+    with previous:
+        st.button(
+            "Previous scene",
+            icon=":material/arrow_back:",
+            key="scene_previous",
+            on_click=_move_scene,
+            args=(scene, -1),
+            width="stretch",
+        )
+    with label:
+        mode = "Manual hold" if held else "Rotating every 20 seconds"
+        st.markdown(
+            f'<div class="scene-control-label"><strong>Scene {scene} of 3</strong><br>{mode}</div>',
+            unsafe_allow_html=True,
+        )
+    with following:
+        st.button(
+            "Next scene",
+            icon=":material/arrow_forward:",
+            key="scene_next",
+            on_click=_move_scene,
+            args=(scene, 1),
+            width="stretch",
+        )
+    with automatic:
+        st.button(
+            "Auto rotate",
+            icon=":material/autorenew:",
+            key="scene_auto",
+            on_click=_resume_rotation,
+            disabled=not held,
+            width="stretch",
+        )
+
+
+def _move_scene(scene: int, direction: int) -> None:
+    st.session_state.manual_scene = ((scene - 1 + direction) % 3) + 1
+
+
+def _resume_rotation() -> None:
+    st.session_state.manual_scene = None
+    if "scene" in st.query_params:
+        del st.query_params["scene"]
 
 
 def _query_flag(name: str) -> bool:
