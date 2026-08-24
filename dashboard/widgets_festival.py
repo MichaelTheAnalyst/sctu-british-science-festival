@@ -23,7 +23,8 @@ PIZZA_SHORT_LABELS = {
     "Someone else can do it": "Someone else",
 }
 AGE_ORDER = ["Under 16", "16–24", "16-24", "25–49", "25-49", "50+", "Prefer not to say"]
-MIN_AGE_GROUP_SIZE = 10
+MIN_AGE_GROUP_SIZE = 1
+RELIABLE_AGE_GROUP_SIZE = 10
 FRAME_GROUPS = ["Promising", "Neutral", "Not promising", "Not sure"]
 FRAME_COLOURS = ["#35D0BA", "#F6C85F", "#F47C7C", "#8A9BB0"]
 CAREFUL_CONCLUSION = "Scissors are currently leading among the festival visitors who answered"
@@ -201,7 +202,7 @@ def _age_story(frame: pd.DataFrame) -> None:
     if distribution.empty:
         _feature_card(
             "Do age groups answer differently?",
-            f"This comparison appears when at least two age groups have {MIN_AGE_GROUP_SIZE} or more pizza answers. Small groups stay hidden.",
+            "The age comparison will appear as soon as someone answers both the age and pizza questions.",
             accent="teal",
         )
         return
@@ -241,9 +242,18 @@ def _age_story(frame: pd.DataFrame) -> None:
         color=alt.condition("datum.share >= 0.42", alt.value("#071A2B"), alt.value("#F7FAFC")),
     )
     st.altair_chart((heatmap + labels).properties(height=45 * len(visible_order)).configure_view(stroke=None), theme=None)
+    early_groups = distribution.loc[
+        distribution["group_size"] < RELIABLE_AGE_GROUP_SIZE, "age"
+    ].drop_duplicates().tolist()
+    caution = (
+        f"Early snapshot: {len(early_groups)} visible age group(s) have fewer than "
+        f"{RELIABLE_AGE_GROUP_SIZE} answers, so their percentages can change sharply. "
+        if early_groups
+        else ""
+    )
     st.markdown(
-        f'<p class="large-explainer"><strong>{insight}</strong><br>'
-        'Percentages are calculated within each visible age group. These patterns do not show that age caused the difference.</p>',
+        f'<p class="large-explainer"><strong>{insight}</strong><br>{caution}'
+        'Percentages are calculated within each age group. This is an association, not proof that age caused the choice.</p>',
         unsafe_allow_html=True,
     )
 
@@ -261,8 +271,8 @@ def age_distribution(
     grouped["PIZZA_METHOD"] = grouped["PIZZA_METHOD"].astype("string").str.strip()
     sizes = grouped["AGE_GROUP"].value_counts()
     eligible = [age for age in AGE_ORDER if int(sizes.get(age, 0)) >= minimum_group_size]
-    if len(eligible) < 2:
-        return pd.DataFrame(columns=columns), "Waiting for two sufficiently large age groups."
+    if not eligible:
+        return pd.DataFrame(columns=columns), "Waiting for age-group responses."
 
     overall = grouped["PIZZA_METHOD"].value_counts(normalize=True)
     rows: list[dict[str, object]] = []
@@ -285,6 +295,13 @@ def age_distribution(
                 }
             )
     result = pd.DataFrame(rows)
+    if len(eligible) == 1:
+        leader = result.loc[result["count"].idxmax()]
+        return result, (
+            f"So far, {leader['method']} leads within the {leader['age']} group "
+            f"({float(leader['share']):.0%}, n={int(leader['group_size'])})."
+        )
+
     standout = result.loc[result["difference"].abs().idxmax()]
     direction = "more" if standout["difference"] >= 0 else "less"
     insight = (

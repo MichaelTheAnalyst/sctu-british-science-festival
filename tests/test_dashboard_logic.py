@@ -29,13 +29,22 @@ class DashboardLogicTests(unittest.TestCase):
         self.assertGreaterEqual(frame["AGE_GROUP"].nunique(), 4)
         self.assertIsNotNone(current_leader(frame))
 
-    def test_age_analysis_uses_all_eligible_groups_and_suppresses_small_groups(self) -> None:
+    def test_age_analysis_is_visible_immediately_and_uses_all_groups(self) -> None:
         distribution, insight = age_distribution(demonstration_responses())
         visible_groups = distribution[["age", "group_size"]].drop_duplicates()
         self.assertGreaterEqual(len(visible_groups), 2)
-        self.assertTrue(visible_groups["group_size"].ge(10).all())
+        self.assertTrue(visible_groups["group_size"].ge(1).all())
         self.assertEqual(distribution.groupby("age")["share"].sum().round(8).tolist(), [1.0] * len(visible_groups))
         self.assertIn("overall crowd", insight)
+
+    def test_age_analysis_handles_one_early_response(self) -> None:
+        import pandas as pd
+
+        frame = pd.DataFrame({"AGE_GROUP": ["25–49"], "PIZZA_METHOD": ["Knife"]})
+        distribution, insight = age_distribution(frame)
+        self.assertFalse(distribution.empty)
+        self.assertEqual(set(distribution["age"]), {"25–49"})
+        self.assertIn("n=1", insight)
 
     def test_history_includes_milestones_and_current_total(self) -> None:
         history = leader_history(demonstration_responses())
