@@ -34,6 +34,10 @@ class DashboardLogicTests(unittest.TestCase):
         self.assertEqual(history["responses"].tolist(), [5, 10, 25, 50, 100, 125])
         self.assertFalse(history["leader"].isna().any())
 
+    def test_first_milestone_is_a_single_checkpoint(self) -> None:
+        history = leader_history(demonstration_responses().iloc[:5])
+        self.assertEqual(history["responses"].tolist(), [5])
+
 
 if __name__ == "__main__":
     unittest.main()

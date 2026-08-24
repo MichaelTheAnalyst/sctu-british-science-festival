@@ -133,6 +133,15 @@ def _trust_scene(frame: pd.DataFrame, *, history_path: Path | None, demonstratio
         st.markdown("### How the leader changed as evidence grew")
         if history.empty:
             _empty_card("The timeline starts at five answers", "Early leaders will appear here as the dataset grows.")
+        elif len(history) == 1:
+            checkpoint = history.iloc[0]
+            _feature_card(
+                "First checkpoint recorded",
+                f"<strong>{checkpoint['leader']}</strong> leads after "
+                f"<strong>{int(checkpoint['responses'])} responses</strong>.<br>"
+                "One checkpoint cannot show change yet. The timeline will appear when another checkpoint is available.",
+                accent="gold",
+            )
         else:
             display = history.copy()
             display["leader_label"] = display["leader"].map(lambda value: PIZZA_LABELS.get(str(value), str(value)))
