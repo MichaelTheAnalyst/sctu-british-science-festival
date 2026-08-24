@@ -2,7 +2,7 @@
 
 Streamlit dashboard for a live event: people complete a Qualtrics survey, and responses appear on this page after the next Qualtrics export (about every 30 seconds).
 
-The dashboard focuses on three connected stories: pizza choices versus crowd predictions, the effect of positive versus negative treatment wording, and a rotating learning panel about privacy, sample size and bias. Festival-specific charts live in `dashboard/widgets_festival.py`.
+The public display rotates through three 20-second scenes: crowd choices and predictions, the wording experiment, and a Data Detective scene about privacy, overclaiming and sample-size change. Festival-specific scenes live in `dashboard/widgets_festival.py`.
 
 ## Prerequisites
 
@@ -46,6 +46,16 @@ python -m streamlit run dashboard/app.py
 ```
 
 Keep the browser tab open during the event. Streamlit reruns the live panel on `poll_interval_seconds`; Qualtrics is only contacted when that cache TTL has expired, and all viewers in the same process share one export. Restart the app after changing the interval.
+
+### Presentation and demonstration modes
+
+- `http://localhost:8501` shows live, grouped Qualtrics results and rotates automatically.
+- `http://localhost:8501/?demo=1` shows a clearly labelled, deterministic 125-response simulation for display testing. Synthetic records never enter the Qualtrics export or live totals.
+- Add `&scene=1`, `&scene=2` or `&scene=3` to hold a particular scene during testing.
+
+The app hides Streamlit controls and chart toolbars for presentation. Use the browser's full-screen command (usually `F11`) on the event display.
+
+Aggregated pizza-leader milestones are stored under `qualtrics-export/output/dashboard-history/`, which is ignored by Git. No individual response records are written to the history file.
 
 ## One-shot export (optional)
 

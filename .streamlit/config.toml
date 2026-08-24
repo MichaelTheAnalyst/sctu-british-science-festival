@@ -2,9 +2,16 @@
 gatherUsageStats = false
 
 [theme]
-base = "light"
-primaryColor = "#167D78"
-backgroundColor = "#F6F8FB"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#243B53"
-font = "sans-serif"
+base = "dark"
+primaryColor = "#35D0BA"
+backgroundColor = "#071A2B"
+secondaryBackgroundColor = "#102B43"
+textColor = "#F7FAFC"
+borderColor = "#234764"
+baseRadius = "12px"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap"
+baseFontSize = 18
+headingFontSizes = ["52px", "42px", "32px", "26px", "22px", "18px"]
+headingFontWeights = [800, 800, 750, 700, 700, 650]
+chartCategoricalColors = ["#35D0BA", "#F29E4C", "#A78BFA", "#F6C85F", "#F47C7C", "#5FB3F3"]
