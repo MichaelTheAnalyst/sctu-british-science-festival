@@ -1,6 +1,9 @@
 .venv/
 venv/
+.deps/
 __pycache__/
 *.pyc
+dashboard.*.log
 .env
+qualtrics-export/config.json
 .DS_Store
