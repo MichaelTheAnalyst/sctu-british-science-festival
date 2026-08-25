@@ -173,11 +173,53 @@ def _trust_scene(frame: pd.DataFrame, *, history_path: Path | None, demonstratio
         else:
             display = history.copy()
             display["leader_label"] = display["leader"].map(lambda value: PIZZA_LABELS.get(str(value), str(value)))
-            timeline = alt.Chart(display).mark_line(point=alt.OverlayMarkDef(size=170, filled=True), strokeWidth=5, color="#F6C85F").encode(
-                x=alt.X("responses:Q", title="Responses received", axis=alt.Axis(labelFontSize=17, titleFontSize=18, grid=False, labelColor="#DCE7F3", titleColor="#DCE7F3")),
-                y=alt.Y("leader_label:N", title=None, axis=alt.Axis(labelFontSize=20, labelColor="#F7FAFC", labelLimit=230)),
-                tooltip=[alt.Tooltip("responses:Q", title="Responses"), alt.Tooltip("leader:N", title="Leader")],
-            ).properties(height=280).configure_view(stroke=None)
+            checkpoints = [int(value) for value in display["responses"]]
+            x_axis = alt.X(
+                "responses:Q",
+                title="Responses received",
+                scale=alt.Scale(domain=[min(checkpoints), max(checkpoints)], nice=False),
+                axis=alt.Axis(
+                    values=checkpoints,
+                    format="d",
+                    labelFontSize=17,
+                    titleFontSize=18,
+                    grid=False,
+                    labelColor="#DCE7F3",
+                    titleColor="#DCE7F3",
+                ),
+            )
+            y_axis = alt.Y(
+                "leader_label:N",
+                title=None,
+                axis=alt.Axis(labelFontSize=20, labelColor="#F7FAFC", labelLimit=230),
+            )
+            step = alt.Chart(display).mark_line(
+                interpolate="step-after",
+                strokeWidth=5,
+                color="#F6C85F",
+            ).encode(x=x_axis, y=y_axis)
+            points = alt.Chart(display).mark_point(
+                size=260,
+                filled=True,
+                stroke="#071A2B",
+                strokeWidth=2,
+            ).encode(
+                x=x_axis,
+                y=y_axis,
+                color=alt.Color(
+                    "leader:N",
+                    scale=alt.Scale(range=["#35D0BA", "#F6C85F", "#F47C7C", "#A98BEF", "#57A0D3"]),
+                    legend=None,
+                ),
+                tooltip=[alt.Tooltip("responses:Q", title="Responses", format="d"), alt.Tooltip("leader:N", title="Leader")],
+            )
+            checkpoint_labels = alt.Chart(display).mark_text(
+                dy=-18,
+                fontSize=14,
+                fontWeight=700,
+                color="#F7FAFC",
+            ).encode(x=x_axis, y=y_axis, text=alt.Text("responses:Q", format="d"))
+            timeline = (step + points + checkpoint_labels).properties(height=280).configure_view(stroke=None)
             st.altair_chart(timeline, theme=None)
             changes = leader_change_count(frame)
             st.markdown(f'<div class="discovery-card"><strong>The leader changed {changes} time{"" if changes == 1 else "s"} while the dataset grew.</strong><br>Early results can move dramatically. Larger samples are often more stable, but they can still be biased.</div>', unsafe_allow_html=True)

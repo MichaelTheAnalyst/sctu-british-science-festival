@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from uuid import uuid4
 
 import pandas as pd
 
@@ -36,7 +37,7 @@ def leader_history(
     result = pd.DataFrame(rows).drop_duplicates("responses", keep="last")
     if persist_path is not None:
         persist_path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = persist_path.with_suffix(".tmp")
+        temporary = persist_path.with_name(f".{persist_path.name}.{uuid4().hex}.tmp")
         temporary.write_text(json.dumps(rows, indent=2), encoding="utf-8")
         temporary.replace(persist_path)
     return result
