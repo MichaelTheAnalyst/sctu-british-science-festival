@@ -22,12 +22,11 @@ PIZZA_SHORT_LABELS = {
     "Fold or tear it": "Fold / tear",
     "Someone else can do it": "Someone else",
 }
-AGE_ORDER = ["Under 16", "16–24", "16-24", "25–49", "25-49", "50+", "Prefer not to say"]
+AGE_ORDER = ["Under 16", "16–24", "25–49", "50+", "Prefer not to say"]
 MIN_AGE_GROUP_SIZE = 1
 RELIABLE_AGE_GROUP_SIZE = 10
 FRAME_GROUPS = ["Promising", "Neutral", "Not promising", "Not sure"]
 FRAME_COLOURS = ["#35D0BA", "#F6C85F", "#F47C7C", "#8A9BB0"]
-CAREFUL_CONCLUSION = "Scissors are currently leading among the festival visitors who answered"
 
 
 def public_responses(frame: pd.DataFrame) -> pd.DataFrame:
@@ -45,7 +44,12 @@ def public_responses(frame: pd.DataFrame) -> pd.DataFrame:
 
 def current_leader(frame: pd.DataFrame) -> str | None:
     answers = _answers(frame, "PIZZA_METHOD")
-    return str(answers.value_counts().index[0]) if not answers.empty else None
+    leaders = _leaders(answers)
+    if not leaders:
+        return None
+    if len(leaders) == 1:
+        return leaders[0]
+    return f"Tie: {_join_answers(leaders)}"
 
 
 def render_scene(scene: int, frame: pd.DataFrame, *, demonstration: bool, history_path: Path | None) -> None:
@@ -78,15 +82,23 @@ def _crowd_scene(frame: pd.DataFrame) -> None:
             )
             st.altair_chart((bars + labels).configure_view(stroke=None), theme=None)
     with story_col:
-        predicted_leader, actual_leader = _leader(predicted), _leader(actual)
-        if predicted_leader:
-            _feature_card("🏆  What did the crowd predict?", f"Most visitors predicted<br><strong>{predicted_leader}</strong>", accent="orange")
+        predicted_leaders, actual_leaders = _leaders(predicted), _leaders(actual)
+        if len(predicted_leaders) == 1:
+            _feature_card("🏆  What did the crowd predict?", f"Most visitors predicted<br><strong>{predicted_leaders[0]}</strong>", accent="orange")
+        elif predicted_leaders:
+            _feature_card("🏆  What did the crowd predict?", f"The top prediction is tied<br><strong>{_join_answers(predicted_leaders)}</strong>", accent="orange")
         else:
             _feature_card("🏆  Prediction challenge", "Waiting for the crowd’s predictions.", accent="orange")
-        if actual_leader and predicted_leader:
-            matched = actual_leader == predicted_leader
+        if len(actual_leaders) > 1:
+            _feature_card(
+                "No single leader yet — it’s a tie!",
+                f"Actual result<br><strong>{_join_answers(actual_leaders)}</strong>",
+                accent="purple",
+            )
+        elif actual_leaders and predicted_leaders:
+            matched = actual_leaders[0] in predicted_leaders
             headline = "The detectives read the crowd!" if matched else "Plot twist — the crowd surprised us!"
-            _feature_card(headline, f"Actual leader<br><strong>{actual_leader}</strong>", accent="gold" if matched else "purple")
+            _feature_card(headline, f"Actual leader<br><strong>{actual_leaders[0]}</strong>", accent="gold" if matched else "purple")
         _age_story(frame)
 
 
@@ -332,7 +344,11 @@ def _promising_share(answers: pd.Series) -> float:
 
 def _age_story(frame: pd.DataFrame) -> None:
     st.markdown("### 👥 Age lens")
-    distribution, insight = age_distribution(frame)
+    early_distribution, _ = age_distribution(frame, minimum_group_size=1)
+    reliable_distribution, insight = age_distribution(frame, minimum_group_size=RELIABLE_AGE_GROUP_SIZE)
+    reliable_groups = reliable_distribution["age"].nunique() if not reliable_distribution.empty else 0
+    early_mode = reliable_groups < 2
+    distribution = early_distribution if early_mode else reliable_distribution
     if distribution.empty:
         _feature_card(
             "Do age groups answer differently?",
@@ -343,6 +359,13 @@ def _age_story(frame: pd.DataFrame) -> None:
 
     visible_order = distribution["age_label"].drop_duplicates().tolist()
     method_order = [PIZZA_SHORT_LABELS[item] for item in PIZZA_ORDER]
+    value_field = "count:Q" if early_mode else "share:Q"
+    maximum_count = max(1, int(distribution["count"].max()))
+    colour_scale = (
+        alt.Scale(domain=[0, maximum_count], range=["#173A54", "#F6C85F"])
+        if early_mode
+        else alt.Scale(domain=[0, 0.3, 0.6], range=["#173A54", "#22B8A7", "#F6C85F"])
+    )
     heatmap = alt.Chart(distribution).mark_rect(cornerRadius=4).encode(
         x=alt.X(
             "method_label:N",
@@ -357,39 +380,42 @@ def _age_story(frame: pd.DataFrame) -> None:
             axis=alt.Axis(labelFontSize=14, labelColor="#F7FAFC", labelLimit=150),
         ),
         color=alt.Color(
-            "share:Q",
-            scale=alt.Scale(domain=[0, 0.3, 0.6], range=["#173A54", "#22B8A7", "#F6C85F"]),
+            value_field,
+            scale=colour_scale,
             legend=None,
         ),
         tooltip=[
             alt.Tooltip("age:N", title="Age group"),
             alt.Tooltip("method:N", title="Pizza method"),
             alt.Tooltip("count:Q", title="Visitors"),
-            alt.Tooltip("share:Q", title="Within group", format=".0%"),
+            *([] if early_mode else [alt.Tooltip("share:Q", title="Within group", format=".0%")]),
             alt.Tooltip("group_size:Q", title="Group n"),
         ],
     )
     labels = alt.Chart(distribution).mark_text(fontSize=12, fontWeight=700).encode(
         x=alt.X("method_label:N", sort=method_order),
         y=alt.Y("age_label:N", sort=visible_order),
-        text=alt.Text("share:Q", format=".0%"),
-        color=alt.condition("datum.share >= 0.42", alt.value("#071A2B"), alt.value("#F7FAFC")),
+        text=alt.Text("count:Q", format="d") if early_mode else alt.Text("share:Q", format=".0%"),
+        color=alt.condition(
+            "datum.count >= 1" if early_mode else "datum.share >= 0.42",
+            alt.value("#071A2B"),
+            alt.value("#F7FAFC"),
+        ),
     )
     st.altair_chart((heatmap + labels).properties(height=45 * len(visible_order)).configure_view(stroke=None), theme=None)
-    early_groups = distribution.loc[
-        distribution["group_size"] < RELIABLE_AGE_GROUP_SIZE, "age"
-    ].drop_duplicates().tolist()
-    caution = (
-        f"Early snapshot: {len(early_groups)} visible age group(s) have fewer than "
-        f"{RELIABLE_AGE_GROUP_SIZE} answers, so their percentages can change sharply. "
-        if early_groups
-        else ""
-    )
-    st.markdown(
-        f'<p class="large-explainer"><strong>{insight}</strong><br>{caution}'
-        'Percentages are calculated within each age group. This is an association, not proof that age caused the choice.</p>',
-        unsafe_allow_html=True,
-    )
+    if early_mode:
+        st.markdown(
+            '<p class="large-explainer"><strong>Too early to compare age groups.</strong><br>'
+            'The chart shows visitor counts, not percentages. We need at least two age groups with '
+            f'{RELIABLE_AGE_GROUP_SIZE} answers each before describing an age-related pattern.</p>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f'<p class="large-explainer"><strong>{insight}</strong><br>'
+            'Only age groups with at least 10 answers are compared. This is an association, not proof that age caused the choice.</p>',
+            unsafe_allow_html=True,
+        )
 
 
 def age_distribution(
@@ -401,7 +427,9 @@ def age_distribution(
     if "AGE_GROUP" not in frame.columns or "PIZZA_METHOD" not in frame.columns:
         return pd.DataFrame(columns=columns), "Waiting for age-group responses."
     grouped = frame[["AGE_GROUP", "PIZZA_METHOD"]].dropna().copy()
-    grouped["AGE_GROUP"] = grouped["AGE_GROUP"].astype("string").str.strip()
+    grouped["AGE_GROUP"] = grouped["AGE_GROUP"].astype("string").str.strip().replace(
+        {"16-24": "16–24", "25-49": "25–49"}
+    )
     grouped["PIZZA_METHOD"] = grouped["PIZZA_METHOD"].astype("string").str.strip()
     sizes = grouped["AGE_GROUP"].value_counts()
     eligible = [age for age in AGE_ORDER if int(sizes.get(age, 0)) >= minimum_group_size]
@@ -429,12 +457,8 @@ def age_distribution(
                 }
             )
     result = pd.DataFrame(rows)
-    if len(eligible) == 1:
-        leader = result.loc[result["count"].idxmax()]
-        return result, (
-            f"So far, {leader['method']} leads within the {leader['age']} group "
-            f"({float(leader['share']):.0%}, n={int(leader['group_size'])})."
-        )
+    if len(eligible) < 2 or minimum_group_size < RELIABLE_AGE_GROUP_SIZE:
+        return result, "Too early to compare age groups."
 
     standout = result.loc[result["difference"].abs().idxmax()]
     direction = "more" if standout["difference"] >= 0 else "less"
@@ -458,8 +482,21 @@ def _empty_card(title: str, body: str) -> None:
     st.markdown(f'<div class="empty-card"><strong>{title}</strong><br>{body}</div>', unsafe_allow_html=True)
 
 
-def _leader(answers: pd.Series) -> str | None:
-    return str(answers.value_counts().index[0]) if not answers.empty else None
+def _leaders(answers: pd.Series) -> tuple[str, ...]:
+    if answers.empty:
+        return ()
+    counts = answers.value_counts()
+    maximum = int(counts.max())
+    tied = {str(answer) for answer, count in counts.items() if int(count) == maximum}
+    ordered = [answer for answer in PIZZA_ORDER if answer in tied]
+    ordered.extend(sorted(tied.difference(ordered)))
+    return tuple(ordered)
+
+
+def _join_answers(answers: tuple[str, ...]) -> str:
+    if len(answers) < 2:
+        return answers[0] if answers else ""
+    return f"{', '.join(answers[:-1])} and {answers[-1]}"
 
 
 def _answers(frame: pd.DataFrame, column: str) -> pd.Series:

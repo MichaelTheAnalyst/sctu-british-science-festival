@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 import unittest
 
+import pandas as pd
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "dashboard"))
 
@@ -29,22 +31,31 @@ class DashboardLogicTests(unittest.TestCase):
         self.assertGreaterEqual(frame["AGE_GROUP"].nunique(), 4)
         self.assertIsNotNone(current_leader(frame))
 
-    def test_age_analysis_is_visible_immediately_and_uses_all_groups(self) -> None:
-        distribution, insight = age_distribution(demonstration_responses())
+    def test_age_analysis_compares_only_groups_with_ten_answers(self) -> None:
+        distribution, insight = age_distribution(demonstration_responses(), minimum_group_size=10)
         visible_groups = distribution[["age", "group_size"]].drop_duplicates()
         self.assertGreaterEqual(len(visible_groups), 2)
-        self.assertTrue(visible_groups["group_size"].ge(1).all())
+        self.assertTrue(visible_groups["group_size"].ge(10).all())
         self.assertEqual(distribution.groupby("age")["share"].sum().round(8).tolist(), [1.0] * len(visible_groups))
         self.assertIn("overall crowd", insight)
 
     def test_age_analysis_handles_one_early_response(self) -> None:
-        import pandas as pd
-
         frame = pd.DataFrame({"AGE_GROUP": ["25–49"], "PIZZA_METHOD": ["Knife"]})
         distribution, insight = age_distribution(frame)
         self.assertFalse(distribution.empty)
         self.assertEqual(set(distribution["age"]), {"25–49"})
-        self.assertIn("n=1", insight)
+        self.assertEqual(insight, "Too early to compare age groups.")
+
+    def test_current_result_reports_a_tie_instead_of_choosing_first(self) -> None:
+        frame = pd.DataFrame(
+            {"PIZZA_METHOD": ["Fold or tear it", "Scissors", "Knife", "Fold or tear it", "Scissors", "Knife"]}
+        )
+        self.assertEqual(current_leader(frame), "Tie: Knife, Scissors and Fold or tear it")
+
+    def test_history_records_tied_checkpoint(self) -> None:
+        frame = pd.DataFrame({"PIZZA_METHOD": ["Knife", "Scissors", "Knife", "Scissors", "Fold or tear it", "Fold or tear it"]})
+        history = leader_history(frame)
+        self.assertEqual(history.iloc[-1]["leader"], "Tie: Fold or tear it / Knife / Scissors")
 
     def test_history_includes_milestones_and_current_total(self) -> None:
         history = leader_history(demonstration_responses())

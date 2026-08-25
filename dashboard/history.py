@@ -11,6 +11,21 @@ import pandas as pd
 BASE_MILESTONES = (5, 10, 25, 50, 100)
 
 
+def _leader_state(answers: pd.Series) -> tuple[str, ...]:
+    counts = answers.value_counts()
+    if counts.empty:
+        return ()
+    maximum = int(counts.max())
+    return tuple(sorted(str(answer) for answer, count in counts.items() if int(count) == maximum))
+
+
+def _leader_label(answers: pd.Series) -> str:
+    leaders = _leader_state(answers)
+    if len(leaders) == 1:
+        return leaders[0]
+    return f"Tie: {' / '.join(leaders)}"
+
+
 def leader_history(
     frame: pd.DataFrame,
     *,
@@ -31,7 +46,7 @@ def leader_history(
     if total not in points:
         points.append(total)
     rows = [
-        {"responses": point, "leader": str(answers.iloc[:point].value_counts().index[0])}
+        {"responses": point, "leader": _leader_label(answers.iloc[:point])}
         for point in points
     ]
     result = pd.DataFrame(rows).drop_duplicates("responses", keep="last")
@@ -51,11 +66,9 @@ def leader_change_count(frame: pd.DataFrame) -> int:
     if "RecordedDate" in ordered.columns:
         ordered = ordered.sort_values("RecordedDate", kind="stable", na_position="last")
     answers = ordered["PIZZA_METHOD"].astype("string").str.strip().replace("", pd.NA).dropna()
-    counts: dict[str, int] = {}
-    leaders: list[str] = []
-    for answer in answers:
-        counts[str(answer)] = counts.get(str(answer), 0) + 1
-        leader = max(counts, key=counts.get)
-        if not leaders or leader != leaders[-1]:
-            leaders.append(leader)
-    return max(0, len(leaders) - 1)
+    states: list[tuple[str, ...]] = []
+    for point in range(1, len(answers) + 1):
+        state = _leader_state(answers.iloc[:point])
+        if not states or state != states[-1]:
+            states.append(state)
+    return max(0, len(states) - 1)

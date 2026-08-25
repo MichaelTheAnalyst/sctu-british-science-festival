@@ -119,6 +119,8 @@ def _response_event(frame, demonstration: bool) -> str | None:
     if crossed:
         return f"Milestone! {crossed[-1]} visitors have built this dataset together."
     if previous_leader and leader and leader != previous_leader:
+        if leader.startswith("Tie: "):
+            return f"Plot twist! The result is now a tie between {leader.removeprefix('Tie: ')}."
         return f"Plot twist! {leader} is the new leader."
     return "New evidence received! The live results have changed."
 
