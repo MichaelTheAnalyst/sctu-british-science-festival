@@ -12,18 +12,18 @@ Your results will be added to the grouped data displayed on the big screen. Indi
 
 AGE_GROUP. Q1. What age band are you?
 
-0–15 years old — Seedling scientist
-16–24 years old — Root researcher
-25–49 years old — Trunk technician
-50+ years old — Canopy collaborator
-Prefer not to say — Shy sapling
+0–15 years old: Seedling scientist
+16–24 years old: Root researcher
+25–49 years old: Trunk technician
+50+ years old: Canopy collaborator
+Prefer not to say: Shy sapling
 
 
 HANDEDNESS. Q2. Which hand do you use most often?
 
-Right — I write with my right hand
-Left — Left is best for me
-Both — I use both hands about equally
+Right: I write with my right hand
+Left: Left is best for me
+Both: I use both hands about equally
 Prefer not to say
 
 
@@ -70,16 +70,16 @@ QUIZ_INVITATION. That is all the information we will use to build the charts on 
 
 CONTINUE_QUIZ. Q8. Would you like to carry on?
 
-Yes, please — I love learning
-No, thanks — my fingers ache
+Yes, please: I love learning
+No, thanks: my fingers ache
 
 
 [[Block:Clinical trial quiz]]
 TRIAL_STOP. Q9. Can I stop participating in a clinical trial at any time?
 
-No — once you have signed up, you must stay in the study
-Maybe — if you can provide a good reason
-Yes — you can stop without giving a reason
+No: once you have signed up, you must stay in the study
+Maybe: if you can provide a good reason
+Yes: you can stop without giving a reason
 
 
 [[PageBreak]]
@@ -93,8 +93,8 @@ You are in control of your involvement and can stop at any time without giving a
 
 NEW_TREATMENT. Q10. Is a new treatment always better than the existing treatment?
 
-Yes — a trial will always show that the new treatment is better
-No — a new treatment is not always better
+Yes: a trial will always show that the new treatment is better
+No: a new treatment is not always better
 Not sure
 
 
@@ -150,7 +150,7 @@ An AI system deciding whether a treatment is safe
 
 SYSTEM_VALIDATION_FEEDBACK. Why this matters
 
-Computer system validation uses planned tests, checks and documentation to show that a system works as intended, produces reliable records and protects trial data. It validates the system—not whether a treatment itself is safe or effective.
+Computer system validation uses planned tests, checks and documentation to show that a system works as intended, produces reliable records and protects trial data. It validates the system, not whether a treatment itself is safe or effective.
 
 
 [[PageBreak]]

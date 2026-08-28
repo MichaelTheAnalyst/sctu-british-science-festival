@@ -26,17 +26,17 @@ Your results will be added to the grouped data displayed on the big screen. Indi
 
 ### Q1. What age band are you? (`AGE_GROUP`)
 
-- 0–15 years old — Seedling scientist
-- 16–24 years old — Root researcher
-- 25–49 years old — Trunk technician
-- 50+ years old — Canopy collaborator
-- Prefer not to say — Shy sapling
+- 0–15 years old: Seedling scientist
+- 16–24 years old: Root researcher
+- 25–49 years old: Trunk technician
+- 50+ years old: Canopy collaborator
+- Prefer not to say: Shy sapling
 
 ### Q2. Which hand do you use most often? (`HANDEDNESS`)
 
-- Right — I write with my right hand
-- Left — Left is best for me
-- Both — I use both hands about equally
+- Right: I write with my right hand
+- Left: Left is best for me
+- Both: I use both hands about equally
 - Prefer not to say
 
 ### Q3. Which description best matches where you live? (`HOME_AREA`)
@@ -78,8 +78,8 @@ That is all the information we will use to build the charts on the big screen. W
 
 ### Q8. Would you like to carry on? (`CONTINUE_QUIZ`)
 
-- Yes, please — I love learning
-- No, thanks — my fingers ache
+- Yes, please: I love learning
+- No, thanks: my fingers ache
 
 If the participant answers **No**, end the survey with:
 
@@ -93,9 +93,9 @@ Each quiz question should appear on its own page. After an answer is submitted, 
 
 ### Q9. Can I stop participating in a clinical trial at any time? (`TRIAL_STOP`)
 
-- No — once you have signed up, you must stay in the study
-- Maybe — if you can provide a good reason
-- Yes — you can stop without giving a reason **(correct)**
+- No: once you have signed up, you must stay in the study
+- Maybe: if you can provide a good reason
+- Yes: you can stop without giving a reason **(correct)**
 
 Feedback:
 
@@ -103,8 +103,8 @@ Feedback:
 
 ### Q10. Is a new treatment always better than the existing treatment? (`NEW_TREATMENT`)
 
-- Yes — a trial will always show that the new treatment is better
-- No — a new treatment is not always better **(correct)**
+- Yes: a trial will always show that the new treatment is better
+- No: a new treatment is not always better **(correct)**
 - Not sure
 
 Feedback:
@@ -139,7 +139,7 @@ Feedback:
 
 Feedback:
 
-> Computer system validation uses planned tests, checks and documentation to show that a system works as intended, produces reliable records and protects trial data. It validates the system—not whether a treatment itself is safe or effective.
+> Computer system validation uses planned tests, checks and documentation to show that a system works as intended, produces reliable records and protects trial data. It validates the system, not whether a treatment itself is safe or effective.
 
 ### Q14. What is a placebo? (`PLACEBO`)
 
