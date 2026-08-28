@@ -2,6 +2,14 @@
 
 This document is the source of truth for the public Qualtrics survey. Question identifiers in parentheses are the required Qualtrics data-export tags.
 
+## Qualtrics draft
+
+- Survey name: `SCTU British Science Festival 2026 – Growing Data`
+- Southampton Qualtrics survey ID: `SV_4I0U8oV2dQ2yAdw`
+- Status: draft, preview-tested, not published
+- Flow: Q8 `No` ends the survey; Q8 `Yes` opens the six-question clinical-trials quiz
+- Each quiz question is followed by a separate explanatory page
+
 ## Welcome
 
 Welcome to the British Science Festival 2026!
@@ -113,7 +121,7 @@ Feedback:
 
 > Random assignment creates groups that can be compared fairly. Participants would never receive less than the standard treatment they would normally receive. Some trials also use blinding, which means participants, researchers, or both may not know which treatment was assigned until the appropriate time.
 
-### Q12. What are baseline characteristics? (`BASELINE_CHARACTERISTICS`)
+### Q12. What are baseline characteristics? (`BASELINE_CHARS`)
 
 - Information collected at the start of a study so later measurements can be compared with it **(correct)**
 - A measure of how funky a guitar sounds
