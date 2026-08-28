@@ -1,0 +1,176 @@
+[[Block:Welcome and main questions]]
+WELCOME. Welcome to the British Science Festival 2026!
+
+We would like to collect some anonymous data to show how a growing dataset can help us look for patterns and test ideas.
+
+The first seven questions ask about demographics and preferences. Your answers will help build the charts on the big screen during the day. You can skip any question.
+
+You can then choose whether to take a short six-question quiz about clinical trials. The complete activity should take about 1–2 minutes.
+
+Your results will be added to the grouped data displayed on the big screen. Individual answers will not be shown. Let’s begin!
+
+
+AGE_GROUP. Q1. What age band are you?
+
+0–15 years old — Seedling scientist
+16–24 years old — Root researcher
+25–49 years old — Trunk technician
+50+ years old — Canopy collaborator
+Prefer not to say — Shy sapling
+
+
+HANDEDNESS. Q2. Which hand do you use most often?
+
+Right — I write with my right hand
+Left — Left is best for me
+Both — I use both hands about equally
+Prefer not to say
+
+
+HOME_AREA. Q3. Which description best matches where you live?
+
+A city
+A town
+A village or rural area
+Prefer not to say
+
+
+PIZZA_METHOD. Q4. How would you usually cut a pizza into slices?
+
+Pizza cutter
+Scissors
+Knife
+
+
+CREATURE. Q5. Which creature do you most identify with?
+
+Cat
+Kangaroo
+Walrus
+
+
+DAY_OUT. Q6. If you weren’t at the science festival today, where would you most like to spend the day?
+
+Shopping in Southampton
+Relaxing on Bournemouth beach
+Walking in the New Forest
+
+
+COMMUNICATION. Q7. How do you prefer to communicate?
+
+Call me!
+I’ll come and chat to you
+Can I answer in a survey, please?
+
+
+[[PageBreak]]
+
+QUIZ_INVITATION. That is all the information we will use to build the charts on the big screen. Would you like to take a short quiz about clinical trials?
+
+
+CONTINUE_QUIZ. Q8. Would you like to carry on?
+
+Yes, please — I love learning
+No, thanks — my fingers ache
+
+
+[[Block:Clinical trial quiz]]
+TRIAL_STOP. Q9. Can I stop participating in a clinical trial at any time?
+
+No — once you have signed up, you must stay in the study
+Maybe — if you can provide a good reason
+Yes — you can stop without giving a reason
+
+
+[[PageBreak]]
+
+TRIAL_STOP_FEEDBACK. Why this matters
+
+You are in control of your involvement and can stop at any time without giving a reason. The decision is yours, should not affect the standard of care you receive, and you should only continue while you feel happy and able to do so.
+
+
+[[PageBreak]]
+
+NEW_TREATMENT. Q10. Is a new treatment always better than the existing treatment?
+
+Yes — a trial will always show that the new treatment is better
+No — a new treatment is not always better
+Not sure
+
+
+[[PageBreak]]
+
+NEW_TREATMENT_FEEDBACK. Why this matters
+
+A new treatment is not always better. That is one of the reasons trials are needed. A “negative” result is still valuable information and can influence how the next trial is designed.
+
+
+[[PageBreak]]
+
+RANDOMISED_TRIAL. Q11. What is a randomised controlled trial?
+
+A lottery system that decides who is allowed to take part
+A trial in which a computer randomly assigns participants to treatment groups
+A trial in which each participant chooses their treatment group
+
+
+[[PageBreak]]
+
+RANDOMISED_TRIAL_FEEDBACK. Why this matters
+
+Random assignment creates groups that can be compared fairly. Participants would never receive less than the standard treatment they would normally receive. Some trials also use blinding, which means participants, researchers, or both may not know which treatment was assigned until the appropriate time.
+
+
+[[PageBreak]]
+
+BASELINE_CHARACTERISTICS. Q12. What are baseline characteristics?
+
+Information collected at the start of a study so later measurements can be compared with it
+A measure of how funky a guitar sounds
+A person’s heart rhythm recorded on an ECG
+
+
+[[PageBreak]]
+
+BASELINE_FEEDBACK. Why this matters
+
+Baseline characteristics describe participants at the start of a study and help researchers identify changes over time and compare groups fairly. The information collected should be relevant to the trial, and researchers aim to collect only what is needed.
+
+
+[[PageBreak]]
+
+SYSTEM_VALIDATION. Q13. What is computer system validation?
+
+Telling a database that it is loved
+Testing and documenting that a computer system is accurate, reliable and secure
+An AI system deciding whether a treatment is safe
+
+
+[[PageBreak]]
+
+SYSTEM_VALIDATION_FEEDBACK. Why this matters
+
+Computer system validation uses planned tests, checks and documentation to show that a system works as intended, produces reliable records and protects trial data. It validates the system—not whether a treatment itself is safe or effective.
+
+
+[[PageBreak]]
+
+PLACEBO. Q14. What is a placebo?
+
+Something made to look like the treatment being studied but containing no active treatment
+A document describing everything that will happen in a trial
+A popular band from the 1990s
+
+
+[[PageBreak]]
+
+PLACEBO_FEEDBACK. Why this matters
+
+A placebo is designed to look like the treatment being studied but contains no active treatment. Comparing groups can help researchers separate the treatment’s effects from expectations and other changes. Placebos are only used when it is ethical and safe; participants would not be denied necessary standard treatment.
+
+
+[[PageBreak]]
+
+FINAL_MESSAGE. Thanks for completing the clinical-trials quiz. We hope you learned something new!
+
+Do not forget to see how the growing dataset on the big screen develops during the day. Please ask us about the data, the results you see, or clinical trials in general.
