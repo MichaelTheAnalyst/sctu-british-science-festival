@@ -8,7 +8,7 @@ This document is the source of truth for the public Qualtrics survey. Question i
 - Southampton Qualtrics survey ID: `SV_4I0U8oV2dQ2yAdw`
 - Status: draft, preview-tested, not published
 - Flow: Q8 `No` ends the survey; Q8 `Yes` opens the six-question clinical-trials quiz
-- Each quiz question is followed by a separate explanatory page
+- Each quiz question is followed by a separate conditional feedback page: `Correct` for the correct choice or `Not quite` for another choice
 
 ## Welcome
 
@@ -87,6 +87,15 @@ If the participant answers **No**, end the survey with:
 
 If the participant answers **Yes**, continue to Q9.
 
+### Immediate quiz feedback
+
+For Q9–Q14, show feedback immediately after the visitor answers:
+
+- Show **Correct** when the correct choice was selected.
+- Show **Not quite** when any other choice was selected.
+- Show the same educational explanation after either result.
+- Do not display a numerical score or rank visitors.
+
 ## Clinical trial knowledge
 
 Each quiz question should appear on its own page. After an answer is submitted, show the explanation before continuing. The explanation should be shown whether the participant was right or wrong, with a short **Correct** or **Not quite** heading.
@@ -97,7 +106,7 @@ Each quiz question should appear on its own page. After an answer is submitted, 
 - Maybe: if you can provide a good reason
 - Yes: you can stop without giving a reason **(correct)**
 
-**Your choice is always yours**
+**Correct / Not quite: Your choice is always yours**
 
 > You are in control of your involvement and can stop at any time without giving a reason. The decision is yours, should not affect the standard of care you receive, and you should only continue while you feel happy and able to do so.
 
@@ -107,7 +116,7 @@ Each quiz question should appear on its own page. After an answer is submitted, 
 - No: a new treatment is not always better **(correct)**
 - Not sure
 
-**New does not always mean better**
+**Correct / Not quite: New does not always mean better**
 
 > A new treatment is not always better. That is one of the reasons trials are needed. A “negative” result is still valuable information and can influence how the next trial is designed.
 
@@ -117,7 +126,7 @@ Each quiz question should appear on its own page. After an answer is submitted, 
 - A trial in which a computer randomly assigns participants to treatment groups **(correct)**
 - A trial in which each participant chooses their treatment group
 
-**Randomisation makes comparisons fairer**
+**Correct / Not quite: Randomisation makes comparisons fairer**
 
 > Random assignment creates groups that can be compared fairly. Participants would never receive less than the standard treatment they would normally receive. Some trials also use blinding, which means participants, researchers, or both may not know which treatment was assigned until the appropriate time.
 
@@ -127,7 +136,7 @@ Each quiz question should appear on its own page. After an answer is submitted, 
 - A measure of how funky a guitar sounds
 - A person’s heart rhythm recorded on an ECG
 
-**Start with a baseline**
+**Correct / Not quite: Start with a baseline**
 
 > Baseline characteristics describe participants at the start of a study and help researchers identify changes over time and compare groups fairly. The information collected should be relevant to the trial, and researchers aim to collect only what is needed.
 
@@ -137,7 +146,7 @@ Each quiz question should appear on its own page. After an answer is submitted, 
 - Testing and documenting that a computer system is accurate, reliable and secure **(correct)**
 - An AI system deciding whether a treatment is safe
 
-**Reliable systems protect trial data**
+**Correct / Not quite: Reliable systems protect trial data**
 
 > Computer system validation uses planned tests, checks and documentation to show that a system works as intended, produces reliable records and protects trial data. It validates the system, not whether a treatment itself is safe or effective.
 
@@ -147,7 +156,7 @@ Each quiz question should appear on its own page. After an answer is submitted, 
 - A document describing everything that will happen in a trial
 - A popular band from the 1990s
 
-**A placebo has no active treatment**
+**Correct / Not quite: A placebo has no active treatment**
 
 > A placebo is designed to look like the treatment being studied but contains no active treatment. Comparing groups can help researchers separate the treatment’s effects from expectations and other changes. Placebos are only used when it is ethical and safe; participants would not be denied necessary standard treatment.
 
