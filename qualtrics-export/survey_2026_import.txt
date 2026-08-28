@@ -84,7 +84,7 @@ Yes: you can stop without giving a reason
 
 [[PageBreak]]
 
-TRIAL_STOP_FEEDBACK. Why this matters
+TRIAL_STOP_FEEDBACK. Your choice is always yours
 
 You are in control of your involvement and can stop at any time without giving a reason. The decision is yours, should not affect the standard of care you receive, and you should only continue while you feel happy and able to do so.
 
@@ -100,7 +100,7 @@ Not sure
 
 [[PageBreak]]
 
-NEW_TREATMENT_FEEDBACK. Why this matters
+NEW_TREATMENT_FEEDBACK. New does not always mean better
 
 A new treatment is not always better. That is one of the reasons trials are needed. A “negative” result is still valuable information and can influence how the next trial is designed.
 
@@ -116,7 +116,7 @@ A trial in which each participant chooses their treatment group
 
 [[PageBreak]]
 
-RANDOMISED_TRIAL_FEEDBACK. Why this matters
+RANDOMISED_TRIAL_FEEDBACK. Randomisation makes comparisons fairer
 
 Random assignment creates groups that can be compared fairly. Participants would never receive less than the standard treatment they would normally receive. Some trials also use blinding, which means participants, researchers, or both may not know which treatment was assigned until the appropriate time.
 
@@ -132,7 +132,7 @@ A person’s heart rhythm recorded on an ECG
 
 [[PageBreak]]
 
-BASELINE_FEEDBACK. Why this matters
+BASELINE_FEEDBACK. Start with a baseline
 
 Baseline characteristics describe participants at the start of a study and help researchers identify changes over time and compare groups fairly. The information collected should be relevant to the trial, and researchers aim to collect only what is needed.
 
@@ -148,7 +148,7 @@ An AI system deciding whether a treatment is safe
 
 [[PageBreak]]
 
-SYSTEM_VALIDATION_FEEDBACK. Why this matters
+SYSTEM_VALIDATION_FEEDBACK. Reliable systems protect trial data
 
 Computer system validation uses planned tests, checks and documentation to show that a system works as intended, produces reliable records and protects trial data. It validates the system, not whether a treatment itself is safe or effective.
 
@@ -164,7 +164,7 @@ A popular band from the 1990s
 
 [[PageBreak]]
 
-PLACEBO_FEEDBACK. Why this matters
+PLACEBO_FEEDBACK. A placebo has no active treatment
 
 A placebo is designed to look like the treatment being studied but contains no active treatment. Comparing groups can help researchers separate the treatment’s effects from expectations and other changes. Placebos are only used when it is ethical and safe; participants would not be denied necessary standard treatment.
 

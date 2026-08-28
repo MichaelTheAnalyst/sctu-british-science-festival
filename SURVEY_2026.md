@@ -97,7 +97,7 @@ Each quiz question should appear on its own page. After an answer is submitted, 
 - Maybe: if you can provide a good reason
 - Yes: you can stop without giving a reason **(correct)**
 
-Feedback:
+**Your choice is always yours**
 
 > You are in control of your involvement and can stop at any time without giving a reason. The decision is yours, should not affect the standard of care you receive, and you should only continue while you feel happy and able to do so.
 
@@ -107,7 +107,7 @@ Feedback:
 - No: a new treatment is not always better **(correct)**
 - Not sure
 
-Feedback:
+**New does not always mean better**
 
 > A new treatment is not always better. That is one of the reasons trials are needed. A “negative” result is still valuable information and can influence how the next trial is designed.
 
@@ -117,7 +117,7 @@ Feedback:
 - A trial in which a computer randomly assigns participants to treatment groups **(correct)**
 - A trial in which each participant chooses their treatment group
 
-Feedback:
+**Randomisation makes comparisons fairer**
 
 > Random assignment creates groups that can be compared fairly. Participants would never receive less than the standard treatment they would normally receive. Some trials also use blinding, which means participants, researchers, or both may not know which treatment was assigned until the appropriate time.
 
@@ -127,7 +127,7 @@ Feedback:
 - A measure of how funky a guitar sounds
 - A person’s heart rhythm recorded on an ECG
 
-Feedback:
+**Start with a baseline**
 
 > Baseline characteristics describe participants at the start of a study and help researchers identify changes over time and compare groups fairly. The information collected should be relevant to the trial, and researchers aim to collect only what is needed.
 
@@ -137,7 +137,7 @@ Feedback:
 - Testing and documenting that a computer system is accurate, reliable and secure **(correct)**
 - An AI system deciding whether a treatment is safe
 
-Feedback:
+**Reliable systems protect trial data**
 
 > Computer system validation uses planned tests, checks and documentation to show that a system works as intended, produces reliable records and protects trial data. It validates the system, not whether a treatment itself is safe or effective.
 
@@ -147,7 +147,7 @@ Feedback:
 - A document describing everything that will happen in a trial
 - A popular band from the 1990s
 
-Feedback:
+**A placebo has no active treatment**
 
 > A placebo is designed to look like the treatment being studied but contains no active treatment. Comparing groups can help researchers separate the treatment’s effects from expectations and other changes. Placebos are only used when it is ethical and safe; participants would not be denied necessary standard treatment.
 
