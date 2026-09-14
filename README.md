@@ -2,7 +2,9 @@
 
 Streamlit dashboard for a live event: people complete a Qualtrics survey, and responses appear on this page after the next Qualtrics export (about every 30 seconds).
 
-The public display rotates through three 20-second scenes: crowd choices and predictions, the wording experiment, and a Data Detective scene about privacy, overclaiming and sample-size change. Festival-specific scenes live in `dashboard/widgets_festival.py`.
+For installation and transfer to the SCTU generic account, follow [`docs/GENERIC_ACCOUNT_SETUP.md`](docs/GENERIC_ACCOUNT_SETUP.md).
+
+The public display presents all four evidence stories on one large-screen page: today's preference totals, pizza and creature choices by handedness, preferred day out by home area, and communication preference by age. Festival-specific charts live in `dashboard/widgets_festival.py`. The optional clinical-trials quiz is not included in the dashboard analysis.
 
 ## Prerequisites
 
@@ -29,13 +31,15 @@ Install dependencies:
 python -m pip install -r requirements.txt
 ```
 
-Copy the example config and fill in credentials (this file is gitignored):
+For local development, copy the example config and fill in credentials (this file is gitignored):
 
 ```text
 python -c "from pathlib import Path; src = Path('qualtrics-export') / 'config.example.json'; dest = Path('qualtrics-export') / 'config.json'; dest.write_text(src.read_text(encoding='utf-8'), encoding='utf-8')"
 ```
 
 Edit `qualtrics-export/config.json` and set `server`, `client_id`, `client_secret`, and `survey_id`. Optional `poll_interval_seconds` (default 30) controls how often the dashboard re-fetches from Qualtrics.
+
+For the generic account or any shared computer, follow the linked runbook instead. It stores the secret and downloaded responses outside the repository and selects them with `QUALTRICS_CONFIG_PATH` and `QUALTRICS_OUTPUT_PATH`.
 
 ## Run the dashboard
 
@@ -49,15 +53,10 @@ Keep the browser tab open during the event. Streamlit reruns the live panel on `
 
 ### Presentation and demonstration modes
 
-- `http://localhost:8501` shows live, grouped Qualtrics results and rotates automatically.
-- `http://localhost:8501/?demo=1` shows a clearly labelled, deterministic 125-response simulation for display testing. Synthetic records never enter the Qualtrics export or live totals.
-- Add `&scene=1`, `&scene=2` or `&scene=3` to hold a particular scene during testing.
-
-Use **Previous scene** and **Next scene** at the bottom of the display to flip through the scenes manually. Manual navigation pauses the rotation; choose **Auto rotate** to resume the normal 20-second cycle.
+- `http://localhost:8501` shows all live, grouped Qualtrics results on one page.
+- `http://localhost:8501/?demo=1` shows a clearly labelled, deterministic 100-response simulation for display testing. Synthetic records never enter the Qualtrics export or live totals.
 
 The app hides Streamlit controls and chart toolbars for presentation. Use the browser's full-screen command (usually `F11`) on the event display.
-
-Aggregated pizza-leader milestones are stored under `qualtrics-export/output/dashboard-history/`, which is ignored by Git. No individual response records are written to the history file.
 
 ## One-shot export (optional)
 
@@ -74,11 +73,11 @@ Files are written under `qualtrics-export/output/<survey_id>/`, which is gitigno
 The festival survey uses these Qualtrics data-export tags:
 
 - `AGE_GROUP`
+- `HANDEDNESS`
+- `HOME_AREA`
 - `PIZZA_METHOD`
-- `PREDICT_LEADER`
-- `FRAME_POSITIVE`
-- `FRAME_NEGATIVE`
-- `PRIVACY_MYTH`
-- `SPOT_OVERCLAIM`
+- `CREATURE`
+- `DAY_OUT`
+- `COMMUNICATION`
 
-Keep these tags if question wording or order changes. The public dashboard excludes preview/test submissions and unfinished responses, and only displays grouped results.
+Keep these tags if question wording or order changes. The public dashboard excludes preview/test submissions and unfinished responses, displays grouped results only, and deliberately ignores Q8–Q14.

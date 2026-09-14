@@ -1,4 +1,4 @@
-"""Deterministic demonstration data for festival-display development."""
+"""Deterministic demonstration data for the seven public survey questions."""
 
 from __future__ import annotations
 
@@ -8,63 +8,67 @@ import random
 import pandas as pd
 
 
-def demonstration_responses(size: int = 125, seed: int = 2026) -> pd.DataFrame:
-    """Return clearly synthetic responses shaped like the Qualtrics export."""
+def demonstration_responses(size: int = 100, seed: int = 2026) -> pd.DataFrame:
+    """Return synthetic Q1–Q7 responses shaped like a Qualtrics export."""
     rng = random.Random(seed)
-    pizza = ["Pizza cutter", "Knife", "Scissors", "Fold or tear it", "Someone else can do it"]
-    ages = ["Under 16", "16–24", "25–49", "50+", "Prefer not to say"]
-    effectiveness = [
-        "Not at all effective",
-        "Slightly effective",
-        "Moderately effective",
-        "Very effective",
-        "Extremely effective",
+    ages = ["0–15", "16–24", "25–49", "50+", "Prefer not to say"]
+    hands = ["Right", "Left", "Both", "Prefer not to say"]
+    homes = ["City", "Town", "Village or rural area", "Prefer not to say"]
+    pizzas = ["Pizza cutter", "Scissors", "Knife", "I eat it whole"]
+    creatures = ["Cat", "Kangaroo", "Walrus", "Butterfly"]
+    days_out = [
+        "Shopping in Southampton",
+        "Relaxing on Bournemouth beach",
+        "Walking in the New Forest",
+        "In bed",
     ]
-    overclaims = [
-        "Scissors are currently leading among the festival visitors who answered",
-        "Most people across the UK use scissors",
-        "Scissors are scientifically the best method",
-        "We cannot learn anything from the answers",
-        "Not sure",
-    ]
+    communication = ["Call me!", "Text message", "Written letter", "Answer in a survey"]
     started = datetime(2026, 9, 12, 9, 30, tzinfo=timezone.utc)
     rows: list[dict[str, object]] = []
 
     for index in range(size):
         age = rng.choices(ages, weights=[18, 20, 34, 22, 6])[0]
-        if index < 10:
-            pizza_choice = rng.choices(pizza, weights=[16, 10, 45, 24, 5])[0]
-        elif index < 25:
-            pizza_choice = rng.choices(pizza, weights=[23, 10, 25, 37, 5])[0]
-        else:
-            weights = {
-                "Under 16": [18, 9, 38, 31, 4],
-                "16–24": [27, 10, 26, 33, 4],
-                "25–49": [38, 16, 19, 23, 4],
-                "50+": [44, 21, 15, 17, 3],
-                "Prefer not to say": [32, 16, 23, 25, 4],
-            }[age]
-            pizza_choice = rng.choices(pizza, weights=weights)[0]
+        hand = rng.choices(hands, weights=[68, 13, 14, 5])[0]
+        home = rng.choices(homes, weights=[38, 33, 24, 5])[0]
 
-        predicted = rng.choices(pizza, weights=[43, 11, 25, 17, 4])[0]
-        positive_group = index % 2 == 0
-        frame_weights = [3, 8, 20, 40, 29] if positive_group else [7, 15, 27, 33, 18]
-        frame_answer = rng.choices(effectiveness, weights=frame_weights)[0]
-        privacy = rng.choices(["Myth", "Fact", "Not sure"], weights=[82, 7, 11])[0]
-        overclaim = rng.choices(overclaims, weights=[77, 8, 4, 5, 6])[0]
+        pizza_weights = {
+            "Right": [46, 14, 25, 15],
+            "Left": [32, 26, 25, 17],
+            "Both": [35, 28, 20, 17],
+            "Prefer not to say": [38, 21, 23, 18],
+        }[hand]
+        creature_weights = {
+            "Right": [38, 25, 20, 17],
+            "Left": [24, 34, 22, 20],
+            "Both": [29, 21, 31, 19],
+            "Prefer not to say": [25, 25, 25, 25],
+        }[hand]
+        day_weights = {
+            "City": [38, 28, 19, 15],
+            "Town": [27, 28, 30, 15],
+            "Village or rural area": [17, 22, 44, 17],
+            "Prefer not to say": [25, 25, 25, 25],
+        }[home]
+        communication_weights = {
+            "0–15": [12, 47, 9, 32],
+            "16–24": [10, 53, 8, 29],
+            "25–49": [22, 41, 12, 25],
+            "50+": [39, 24, 22, 15],
+            "Prefer not to say": [25, 25, 25, 25],
+        }[age]
 
         rows.append(
             {
                 "RecordedDate": started + timedelta(minutes=index * 3),
                 "Finished": True,
                 "DistributionChannel": "synthetic-demonstration",
-                "AGE_GROUP": age if rng.random() > 0.05 else pd.NA,
-                "PIZZA_METHOD": pizza_choice,
-                "PREDICT_LEADER": predicted,
-                "FRAME_POSITIVE": frame_answer if positive_group else pd.NA,
-                "FRAME_NEGATIVE": frame_answer if not positive_group else pd.NA,
-                "PRIVACY_MYTH": privacy if rng.random() > 0.03 else pd.NA,
-                "SPOT_OVERCLAIM": overclaim if rng.random() > 0.04 else pd.NA,
+                "AGE_GROUP": age if rng.random() > 0.03 else pd.NA,
+                "HANDEDNESS": hand if rng.random() > 0.03 else pd.NA,
+                "HOME_AREA": home if rng.random() > 0.03 else pd.NA,
+                "PIZZA_METHOD": rng.choices(pizzas, weights=pizza_weights)[0],
+                "CREATURE": rng.choices(creatures, weights=creature_weights)[0],
+                "DAY_OUT": rng.choices(days_out, weights=day_weights)[0],
+                "COMMUNICATION": rng.choices(communication, weights=communication_weights)[0],
             }
         )
 

@@ -6,6 +6,7 @@ one Qualtrics export rather than each triggering a full download.
 
 from __future__ import annotations
 
+import os
 import sys
 import threading
 from dataclasses import dataclass
@@ -28,6 +29,22 @@ from export_survey import (  # noqa: E402
 
 DEFAULT_CONFIG_PATH = _EXPORT_DIR / "config.json"
 DEFAULT_OUTPUT_ROOT = _EXPORT_DIR / "output"
+
+
+def default_config_path() -> Path:
+    """Return the configured Qualtrics config path.
+
+    ``QUALTRICS_CONFIG_PATH`` lets shared installations keep OAuth credentials
+    outside a Git or OneDrive-synchronised project directory.
+    """
+    configured = os.environ.get("QUALTRICS_CONFIG_PATH", "").strip()
+    return Path(configured).expanduser() if configured else DEFAULT_CONFIG_PATH
+
+
+def default_output_root() -> Path:
+    """Return the configured directory for downloaded Qualtrics exports."""
+    configured = os.environ.get("QUALTRICS_OUTPUT_PATH", "").strip()
+    return Path(configured).expanduser() if configured else DEFAULT_OUTPUT_ROOT
 
 METADATA_COLUMNS = frozenset(
     {
@@ -153,7 +170,7 @@ def dashboard_poll_seconds(config_path: Path | None = None) -> float:
         :data:`DEFAULT_DASHBOARD_POLL_SECONDS` if the file cannot be loaded.
     """
     try:
-        return load_config(config_path or DEFAULT_CONFIG_PATH).poll_interval_seconds
+        return load_config(config_path or default_config_path()).poll_interval_seconds
     except (OSError, QualtricsError, FileNotFoundError, ValueError):
         return DEFAULT_DASHBOARD_POLL_SECONDS
 
@@ -181,8 +198,8 @@ def refresh_snapshot(
         local CSV if one exists, with ``error`` set.
     """
     global _cache
-    config_path = config_path or DEFAULT_CONFIG_PATH
-    output_root = output_root or DEFAULT_OUTPUT_ROOT
+    config_path = config_path or default_config_path()
+    output_root = output_root or default_output_root()
 
     with _lock:
         now = datetime.now(timezone.utc)

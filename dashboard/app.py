@@ -1,18 +1,15 @@
-"""Rotating large-screen dashboard for the Festival Data Detective activity."""
+"""Single-page large-screen dashboard for the Festival Data Detective activity."""
 
 from __future__ import annotations
 
+import base64
 from datetime import datetime, timezone
 from pathlib import Path
-
 import streamlit as st
 
 from data import Snapshot, dashboard_poll_seconds, refresh_snapshot
 from synthetic_data import demonstration_responses
-from widgets_festival import current_leader, public_responses, render_scene
-
-SCENE_SECONDS = 20
-HISTORY_PATH = Path(__file__).resolve().parent.parent / "qualtrics-export" / "output" / "dashboard-history" / "live.json"
+from widgets_festival import current_leader, public_responses, render_dashboard
 
 _DISPLAY_CSS = """
 <style>
@@ -25,13 +22,20 @@ _DISPLAY_CSS = """
     [data-testid="stMarkdownContainer"] p { color: #DCE7F3; }
     h1 { color: #FFFFFF !important; font-size: 3.25rem !important; line-height: 1 !important; margin: 0 !important; }
     h2 { color: #FFFFFF !important; font-size: 2.65rem !important; line-height: 1.08 !important; margin: 0.15rem 0 0.35rem !important; }
-    h3 { color: #FFFFFF !important; font-size: 1.7rem !important; margin: 0 !important; }
+    h3 { color: #FFFFFF !important; font-size: 2rem !important; margin: 0 !important; }
     .topline { display:flex; align-items:center; justify-content:space-between; gap:1.5rem; margin-bottom:.7rem; }
-    .brand-subtitle { color:#9FB4C9; font-size:1.25rem; margin-top:0.25rem; }
-    .hero-count { color:#FFFFFF; font-size:1.35rem; font-weight:650; text-align:right; }
-    .hero-count strong { color:#F6C85F; font-size:4.7rem; line-height:0.8; margin-right:0.35rem; }
+    .title-block { display:flex; flex-direction:column; gap:.65rem; }
+    .header-right { align-items:center; display:flex; gap:1.5rem; }
+    .survey-qr { align-items:center; display:flex; flex-direction:column; gap:.35rem; }
+    .survey-qr img { background:#FFFFFF; border:5px solid #FFFFFF; border-radius:.55rem; height:148px; image-rendering:auto; width:148px; }
+    .survey-qr span { color:#F6C85F; font-size:1.25rem; font-weight:900; line-height:1; }
+    .sctu-lockup { align-items:center; display:flex; gap:.75rem; }
+    .sctu-logo { background:#FFFFFF; border-radius:50%; height:126px; object-fit:contain; padding:5px; width:126px; }
+    .sctu-name { color:#FFFFFF; font-size:1.25rem; font-weight:800; line-height:1.15; max-width:180px; }
+    .hero-count { color:#FFFFFF; font-size:1.55rem; font-weight:700; line-height:1.15; text-align:right; }
+    .hero-count strong { color:#F6C85F; font-size:5.2rem; line-height:0.8; margin-right:0.35rem; }
     .scene-kicker { color:#35D0BA; font-size:1.05rem; font-weight:800; letter-spacing:0.16em; }
-    .demo-ribbon { background:#F6C85F; border-radius:999px; color:#071A2B; display:inline-block; font-size:1rem; font-weight:900; letter-spacing:.08em; margin-left:.45rem; padding:.35rem .8rem; }
+    .demo-ribbon { align-self:flex-start; background:#F6C85F; border-radius:999px; color:#071A2B; display:inline-block; font-size:1rem; font-weight:900; letter-spacing:.08em; padding:.35rem .8rem; }
     .event-banner { animation:eventPulse 4.5s ease both; background:#F6C85F; border-radius:.8rem; color:#071A2B; font-size:1.45rem; font-weight:900; margin:.2rem 0 .45rem; padding:.6rem 1rem; text-align:center; }
     @keyframes eventPulse { 0%{opacity:0;transform:scale(.94)} 12%{opacity:1;transform:scale(1.01)} 82%{opacity:1} 100%{opacity:0} }
     .feature-card, .statement-card, .empty-card, .discovery-card { background:#102B43; border:1px solid #234764; border-radius:1rem; color:#F7FAFC; padding:1rem 1.2rem; }
@@ -45,8 +49,7 @@ _DISPLAY_CSS = """
     .statement-card strong { display:block; font-size:1.65rem; line-height:1.3; margin:.6rem 0; }
     .statement-card p { color:#35D0BA !important; font-size:1.25rem; font-weight:800; }
     .equals-sign { color:#F6C85F; font-size:5.4rem; font-weight:900; text-align:center; }
-    .discovery-card { background:#173A54; border-color:#F6C85F; font-size:1.28rem; line-height:1.4; margin-top:.55rem; text-align:center; }
-    .discovery-card strong { color:#F6C85F; font-size:1.45rem; }
+    .discovery-card { background:#173A54; border-color:#F6C85F; font-size:1.38rem; line-height:1.4; margin-top:.55rem; text-align:center; }
     .empty-card { border:2px dashed #52718A; color:#DCE7F3; font-size:1.45rem; line-height:1.5; min-height:175px; padding:2rem; text-align:center; }
     .empty-card strong { color:#F6C85F; font-size:1.8rem; }
     .legend-row { display:flex; gap:.6rem; justify-content:center; margin-top:-.25rem; }
@@ -55,14 +58,8 @@ _DISPLAY_CSS = """
     .crossed-claim { color:#F47C7C; font-size:1.35rem; font-weight:750; margin:.65rem 0 .25rem; text-decoration:line-through; text-decoration-thickness:3px; }
     .large-explainer { font-size:1.25rem !important; line-height:1.35; }
     .footer-line { color:#8FA7BC; font-size:.95rem; margin-top:.35rem; text-align:right; }
-    .scene-dots { color:#52718A; font-size:1.2rem; letter-spacing:.35rem; }
-    .scene-dots strong { color:#35D0BA; }
-    .scene-control-label { color:#DCE7F3; font-size:1rem; font-weight:750; padding-top:.55rem; text-align:center; }
-    .scene-control-label strong { color:#35D0BA; }
-    .st-key-scene_previous button, .st-key-scene_next button, .st-key-scene_auto button {
-        border-color:#35D0BA; font-size:1rem; font-weight:750; min-height:2.65rem; width:100%;
-    }
-    @media (max-width: 1100px) { h1{font-size:2.4rem!important} h2{font-size:2rem!important}.hero-count strong{font-size:3.6rem} }
+    [data-testid="stVerticalBlockBorderWrapper"] { background:#0B2236; border-color:#234764 !important; border-radius:1rem; }
+    @media (max-width: 1100px) { h1{font-size:2.4rem!important} h2{font-size:2rem!important}.hero-count strong{font-size:3.6rem}.survey-qr img{height:100px;width:100px}.survey-qr span{font-size:1rem}.sctu-logo{height:82px;width:82px}.sctu-name{display:none} }
 </style>
 """
 
@@ -80,26 +77,44 @@ def main() -> None:
         else:
             snapshot = refresh_snapshot()
             frame = public_responses(snapshot.responses)
-        scene = _scene_number()
         event = _response_event(frame, demonstration)
         _header(len(frame), demonstration)
         if event:
             st.markdown(f'<div class="event-banner">{event}</div>', unsafe_allow_html=True)
-        render_scene(scene, frame, demonstration=demonstration, history_path=HISTORY_PATH)
-        _scene_controls(scene)
-        _footer(scene, snapshot, poll_seconds, demonstration)
+        render_dashboard(frame)
+        _footer(snapshot, poll_seconds, demonstration)
 
     display()
 
 
 def _header(count: int, demonstration: bool) -> None:
     ribbon = '<span class="demo-ribbon">SIMULATED DEMONSTRATION DATA</span>' if demonstration else ""
+    logo = _logo_data_uri()
+    qr_code = _qr_code_data_uri()
     st.markdown(
-        f'<div class="topline"><div><h1>Festival Data Detective</h1><div class="brand-subtitle">'
-        f'Follow the evidence. Question the conclusion. {ribbon}</div></div>'
-        f'<div class="hero-count"><strong>{count}</strong> Data Detectives<br>have joined today</div></div>',
+        f'<div class="topline"><div class="title-block"><h1>Festival Data Detective</h1>{ribbon}</div>'
+        f'<div class="header-right"><div class="survey-qr"><img src="{qr_code}" '
+        f'alt="QR code for the Festival Data Detective survey"><span>Scan to take part</span></div>'
+        f'<div class="sctu-lockup"><img class="sctu-logo" src="{logo}" '
+        f'alt="Southampton Clinical Trials Unit logo"><div class="sctu-name">Southampton Clinical<br>Trials Unit</div></div>'
+        f'<div class="hero-count"><strong>{count}</strong> Data Detectives<br>have joined today</div></div></div>',
         unsafe_allow_html=True,
     )
+
+
+def _logo_data_uri() -> str:
+    logo_path = Path(__file__).resolve().parents[1] / "assets" / "SCTU Logo (mediabin resized).jpg"
+    return _image_data_uri(logo_path, "image/jpeg")
+
+
+def _qr_code_data_uri() -> str:
+    qr_path = Path(__file__).resolve().parents[1] / "assets" / "Festival Data Detective survey QR.png"
+    return _image_data_uri(qr_path, "image/png")
+
+
+def _image_data_uri(path: Path, mime_type: str) -> str:
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
 
 
 def _response_event(frame, demonstration: bool) -> str | None:
@@ -125,80 +140,11 @@ def _response_event(frame, demonstration: bool) -> str | None:
     return "New evidence received! The live results have changed."
 
 
-def _scene_number() -> int:
-    manual = st.session_state.get("manual_scene")
-    if manual in {1, 2, 3}:
-        return int(manual)
-    requested = st.query_params.get("scene")
-    try:
-        fixed = int(requested) if requested is not None else 0
-    except (TypeError, ValueError):
-        fixed = 0
-    if fixed in {1, 2, 3}:
-        return fixed
-    return int(datetime.now(timezone.utc).timestamp() // SCENE_SECONDS) % 3 + 1
-
-
-def _scene_controls(scene: int) -> None:
-    """Allow staff to hold and flip through scenes without stopping live refreshes."""
-    # Reserve real Streamlit layout space after variable-height scene content.
-    # CSS margins alone can be under-measured when text wraps at short viewports.
-    st.space(20)
-    held = st.session_state.get("manual_scene") in {1, 2, 3} or "scene" in st.query_params
-    previous, label, following, automatic = st.columns(
-        [1, 1.3, 1, 1], vertical_alignment="center"
-    )
-    with previous:
-        st.button(
-            "Previous scene",
-            icon=":material/arrow_back:",
-            key="scene_previous",
-            on_click=_move_scene,
-            args=(scene, -1),
-            width="stretch",
-        )
-    with label:
-        mode = "Manual hold" if held else "Rotating every 20 seconds"
-        st.markdown(
-            f'<div class="scene-control-label"><strong>Scene {scene} of 3</strong><br>{mode}</div>',
-            unsafe_allow_html=True,
-        )
-    with following:
-        st.button(
-            "Next scene",
-            icon=":material/arrow_forward:",
-            key="scene_next",
-            on_click=_move_scene,
-            args=(scene, 1),
-            width="stretch",
-        )
-    with automatic:
-        st.button(
-            "Auto rotate",
-            icon=":material/autorenew:",
-            key="scene_auto",
-            on_click=_resume_rotation,
-            disabled=not held,
-            width="stretch",
-        )
-
-
-def _move_scene(scene: int, direction: int) -> None:
-    st.session_state.manual_scene = ((scene - 1 + direction) % 3) + 1
-
-
-def _resume_rotation() -> None:
-    st.session_state.manual_scene = None
-    if "scene" in st.query_params:
-        del st.query_params["scene"]
-
-
 def _query_flag(name: str) -> bool:
     return str(st.query_params.get(name, "")).strip().casefold() in {"1", "true", "yes", "on"}
 
 
-def _footer(scene: int, snapshot: Snapshot | None, poll_seconds: float, demonstration: bool) -> None:
-    dots = " ".join("<strong>●</strong>" if number == scene else "●" for number in (1, 2, 3))
+def _footer(snapshot: Snapshot | None, poll_seconds: float, demonstration: bool) -> None:
     if demonstration:
         status = "Synthetic responses are kept separate from Qualtrics and are never counted as festival data."
     else:
@@ -206,7 +152,7 @@ def _footer(scene: int, snapshot: Snapshot | None, poll_seconds: float, demonstr
         status = f"Live grouped data · updated {fetched} · checking every {_poll_label(poll_seconds)}"
         if snapshot and snapshot.error:
             status += " · temporary connection issue, showing the latest saved export"
-    st.markdown(f'<div class="footer-line"><span class="scene-dots">{dots}</span><br>{status}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="footer-line">{status}</div>', unsafe_allow_html=True)
 
 
 def _poll_label(seconds: float) -> str:
