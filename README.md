@@ -58,6 +58,15 @@ Keep the browser tab open during the event. Streamlit reruns the live panel on `
 
 The app hides Streamlit controls and chart toolbars for presentation. Use the browser's full-screen command (usually `F11`) on the event display.
 
+### Post-event analysis
+
+```text
+python -m streamlit run dashboard/post_analysis.py --server.port=8502
+```
+
+- `http://localhost:8502` analyses completed Qualtrics responses from 20 September.
+- `http://localhost:8502/?demo=1` uses the same simulated dataset as the live demo.
+
 ## One-shot export (optional)
 
 To download responses without starting the dashboard:

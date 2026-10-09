@@ -23,13 +23,19 @@ def demonstration_responses(size: int = 100, seed: int = 2026) -> pd.DataFrame:
         "In bed",
     ]
     communication = ["Call me!", "Text message", "Written letter", "Answer in a survey"]
-    started = datetime(2026, 9, 12, 9, 30, tzinfo=timezone.utc)
+    started = datetime(2026, 9, 20, 9, 30, tzinfo=timezone.utc)
     rows: list[dict[str, object]] = []
 
     for index in range(size):
         age = rng.choices(ages, weights=[18, 20, 34, 22, 6])[0]
         hand = rng.choices(hands, weights=[68, 13, 14, 5])[0]
         home = rng.choices(homes, weights=[38, 33, 24, 5])[0]
+        duration_band = rng.choices(
+            [(45, 119), (120, 299), (300, 599), (600, 1199), (1200, 2100)],
+            weights=[24, 32, 18, 16, 10],
+        )[0]
+        duration_seconds = rng.randint(*duration_band)
+        recorded_at = started + timedelta(minutes=index * 3)
 
         pizza_weights = {
             "Right": [46, 14, 25, 15],
@@ -59,7 +65,10 @@ def demonstration_responses(size: int = 100, seed: int = 2026) -> pd.DataFrame:
 
         rows.append(
             {
-                "RecordedDate": started + timedelta(minutes=index * 3),
+                "StartDate": recorded_at - timedelta(seconds=duration_seconds),
+                "EndDate": recorded_at,
+                "RecordedDate": recorded_at,
+                "Duration (in seconds)": duration_seconds,
                 "Finished": True,
                 "DistributionChannel": "synthetic-demonstration",
                 "AGE_GROUP": age if rng.random() > 0.03 else pd.NA,

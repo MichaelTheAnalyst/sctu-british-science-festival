@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 import sys
 from pathlib import Path
 import unittest
@@ -14,6 +15,14 @@ sys.path.insert(0, str(ROOT / "dashboard"))
 
 from synthetic_data import demonstration_responses  # noqa: E402
 from data import default_config_path, default_output_root  # noqa: E402
+from post_analysis import (  # noqa: E402
+    PERIOD_ORDER,
+    answer_leaders,
+    completion_distribution,
+    hourly_participation,
+    preference_by_period,
+    responses_on_date,
+)
 from widgets_festival import (  # noqa: E402
     AGE_ORDER,
     COMMUNICATION_ORDER,
@@ -134,6 +143,46 @@ class DashboardLogicTests(unittest.TestCase):
     def test_current_result_reports_a_tie_instead_of_choosing_first(self) -> None:
         frame = pd.DataFrame({"PIZZA_METHOD": ["Pizza cutter", "Scissors", "Knife"]})
         self.assertEqual(current_leader(frame), "Tie: Pizza cutter, Scissors and Knife")
+
+    def test_post_analysis_hourly_counts_preserve_empty_hours(self) -> None:
+        frame = pd.DataFrame(
+            {
+                "RecordedDate": pd.to_datetime(
+                    ["2026-09-20 08:05:00", "2026-09-20 08:55:00", "2026-09-20 10:10:00"]
+                )
+            }
+        )
+        hourly = hourly_participation(frame)
+        self.assertEqual(hourly["responses"].tolist(), [2, 0, 1])
+        self.assertEqual(hourly["cumulative"].tolist(), [2, 2, 3])
+
+    def test_post_analysis_shares_sum_within_each_period(self) -> None:
+        distribution = preference_by_period(
+            demonstration_responses(),
+            "PIZZA_METHOD",
+            PIZZA_ORDER,
+        )
+        self.assertTrue(set(distribution["period"]).issubset(set(PERIOD_ORDER)))
+        sums = distribution.groupby("period")["share"].sum().round(8).tolist()
+        self.assertEqual(sums, [1.0] * distribution["period"].nunique())
+
+    def test_post_analysis_completion_buckets_and_leaders_cover_demo(self) -> None:
+        frame = demonstration_responses()
+        completion = completion_distribution(frame)
+        self.assertEqual(int(completion["responses"].sum()), len(frame))
+        leaders = answer_leaders(frame)
+        self.assertEqual(len(leaders), 4)
+        self.assertTrue(all(leader.count > 0 and 0 < leader.share <= 1 for leader in leaders))
+
+    def test_post_analysis_is_restricted_to_20_september(self) -> None:
+        frame = demonstration_responses()
+        frame.loc[0, "RecordedDate"] = pd.Timestamp("2026-09-19 12:00:00", tz="UTC")
+        selected = responses_on_date(frame, date(2026, 9, 20))
+        self.assertEqual(len(selected), len(frame) - 1)
+        self.assertEqual(
+            set(pd.to_datetime(selected["RecordedDate"]).dt.date),
+            {date(2026, 9, 20)},
+        )
 
 
 if __name__ == "__main__":
